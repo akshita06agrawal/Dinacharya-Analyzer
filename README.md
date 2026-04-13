@@ -262,8 +262,5 @@ Use these when explaining this project in interviews:
 
 ---
 
-## 📬 Contact
-
-**Kunal** — [LinkedIn](https://linkedin.com/in/your-profile) · [GitHub](https://github.com/your-username)
 
 *Built as a DevOps portfolio project demonstrating Docker, Kubernetes, CI/CD, Terraform, and monitoring.*
