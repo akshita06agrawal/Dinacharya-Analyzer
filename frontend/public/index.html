@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dincharya — Vedic Routine Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Syne:wght@400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0906;--bg2:#121008;--bg3:#1a160e;--bg4:#221e14;
+  --bdr:rgba(200,160,60,.13);--bdr2:rgba(200,160,60,.28);
+  --gold:#c8a040;--gold2:#e8c870;--rust:#e87050;--sage:#7aaa80;
+  --cream:#f0e8d0;--m1:rgba(240,232,208,.4);--m2:rgba(240,232,208,.68);
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --sans:'Syne',sans-serif;--mono:'DM Mono',monospace;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--mono);background:var(--bg);color:var(--cream);min-height:100vh;overflow-x:hidden;cursor:none}
+#cur{position:fixed;top:0;left:0;pointer-events:none;z-index:9999;width:8px;height:8px;background:var(--gold);border-radius:50%;transform:translate(-50%,-50%);transition:.15s}
+#cur-ring{position:fixed;top:0;left:0;pointer-events:none;z-index:9998;width:30px;height:30px;border:1px solid var(--gold);border-radius:50%;transform:translate(-50%,-50%);transition:transform .35s ease;opacity:.5}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 80% 60% at 15% 20%,rgba(200,160,60,.07),transparent 60%),
+  radial-gradient(ellipse 60% 80% at 85% 80%,rgba(90,128,96,.06),transparent 60%)}
+body::after{content:'';position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:min(680px,100vw);height:min(680px,100vw);pointer-events:none;z-index:0;opacity:.4;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Ccircle cx='100' cy='100' r='95' fill='none' stroke='rgba(200,160,60,.06)' stroke-width='.5'/%3E%3Ccircle cx='100' cy='100' r='72' fill='none' stroke='rgba(200,160,60,.05)' stroke-width='.5'/%3E%3Ccircle cx='100' cy='100' r='49' fill='none' stroke='rgba(200,160,60,.06)' stroke-width='.5'/%3E%3Ccircle cx='100' cy='100' r='26' fill='none' stroke='rgba(200,160,60,.05)' stroke-width='.5'/%3E%3Cline x1='100' y1='5' x2='100' y2='195' stroke='rgba(200,160,60,.04)' stroke-width='.5'/%3E%3Cline x1='5' y1='100' x2='195' y2='100' stroke='rgba(200,160,60,.04)' stroke-width='.5'/%3E%3Cline x1='30' y1='30' x2='170' y2='170' stroke='rgba(200,160,60,.03)' stroke-width='.5'/%3E%3Cline x1='170' y1='30' x2='30' y2='170' stroke='rgba(200,160,60,.03)' stroke-width='.5'/%3E%3C/svg%3E") center/contain no-repeat;
+  animation:mandalaSpin 120s linear infinite}
+@keyframes mandalaSpin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spinRing{to{transform:rotate(360deg)}}
+.fu{opacity:0;animation:fadeUp .6s ease forwards}
+.d1{animation-delay:.1s}.d2{animation-delay:.2s}.d3{animation-delay:.3s}.d4{animation-delay:.4s}.d5{animation-delay:.5s}
+
+#app{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:0 16px 60px}
+
+/* ── HERO ── */
+.hero{text-align:center;padding:64px 0 48px}
+.eyebrow{font-family:var(--sans);font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-bottom:16px}
+.htitle{font-family:var(--serif);font-size:clamp(52px,9vw,92px);font-weight:300;line-height:.88;margin-bottom:14px;letter-spacing:-.01em}
+.htitle em{font-style:italic;color:var(--gold2)}
+.hsub{font-size:12px;color:var(--m2);line-height:1.9;max-width:460px;margin:0 auto 20px;letter-spacing:.02em}
+.hdiv{display:flex;align-items:center;gap:14px;max-width:240px;margin:0 auto 20px}
+.hdiv span{font-family:var(--serif);font-size:20px;color:var(--gold)}
+.hdiv::before,.hdiv::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--bdr2),transparent)}
+.hq{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--m1);line-height:1.9}
+.hqs{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-top:6px}
+
+/* ── STEPS ── */
+.steps{display:flex;align-items:center;justify-content:center;margin-bottom:32px}
+.sd{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;position:relative}
+.sd::after{content:'';position:absolute;top:12px;left:50%;right:-50%;height:1px;background:var(--bdr)}
+.sd:last-child::after{display:none}
+.sc{width:24px;height:24px;border-radius:50%;border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--m1);background:var(--bg2);position:relative;z-index:1;transition:all .3s}
+.sd.cur .sc{border-color:var(--gold);color:var(--gold);background:rgba(200,160,60,.12);box-shadow:0 0 12px rgba(200,160,60,.2)}
+.sd.done .sc{border-color:var(--sage);color:var(--sage);background:rgba(122,170,128,.1)}
+.sl{font-size:8px;letter-spacing:.07em;text-transform:uppercase;color:var(--m1);transition:color .3s}
+.sd.cur .sl{color:var(--gold2)}.sd.done .sl{color:var(--sage)}
+
+/* ── CARDS ── */
+.card{background:var(--bg2);border:1px solid var(--bdr);border-radius:22px;padding:24px 28px;margin-bottom:16px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(200,160,60,.28),transparent)}
+.ch{display:flex;align-items:center;gap:13px;margin-bottom:22px}
+.ci{width:38px;height:38px;border-radius:10px;background:rgba(200,160,60,.1);border:1px solid var(--bdr2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.ct{font-family:var(--serif);font-size:20px;color:var(--cream)}
+.cs{font-size:10px;color:var(--m1);margin-top:2px}
+
+/* ── FIELDS ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:560px){.g2{grid-template-columns:1fr}}
+.fg{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.fl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-family:var(--sans)}
+.fh{font-size:10px;color:var(--m1);margin-top:-3px}
+select,input[type=time],input[type=number]{
+  background:var(--bg3);border:1px solid var(--bdr);border-radius:9px;
+  padding:11px 13px;font-family:var(--mono);font-size:12px;color:var(--cream);
+  outline:none;width:100%;transition:border-color .2s;color-scheme:dark;-webkit-appearance:none}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(200,160,60,.6)'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:30px;cursor:pointer}
+select:focus,input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,160,60,.1)}
+select option{background:#1a1610}
+
+/* ── TAGS ── */
+.tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.tag{padding:6px 13px;border-radius:100px;border:1px solid var(--bdr);background:var(--bg3);font-size:10px;color:var(--m2);cursor:pointer;user-select:none;transition:all .2s;font-family:var(--mono)}
+.tag:hover{border-color:var(--bdr2);color:var(--cream)}
+.tag.on{background:rgba(200,160,60,.15);border-color:var(--gold);color:var(--gold2);box-shadow:0 0 8px rgba(200,160,60,.12)}
+
+/* ── RANGE ── */
+.rw{position:relative;padding-top:30px;margin-top:4px}
+.rv{position:absolute;top:0;right:0;font-family:var(--serif);font-size:24px;color:var(--gold2)}
+input[type=range]{-webkit-appearance:none;width:100%;height:3px;background:var(--bg4);border-radius:2px;outline:none;cursor:pointer;border:none;padding:0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;background:var(--gold);border:2px solid var(--bg);cursor:pointer;box-shadow:0 0 8px rgba(200,160,60,.4)}
+.rl{display:flex;justify-content:space-between;font-size:9px;color:var(--m1);margin-top:5px}
+
+/* ── DOSHA ── */
+.dg{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+@media(max-width:420px){.dg{grid-template-columns:1fr}}
+.dc{border:1px solid var(--bdr);border-radius:16px;padding:16px 13px;cursor:pointer;user-select:none;text-align:center;transition:all .25s;position:relative;overflow:hidden}
+.dc::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .3s}
+.dc.vata::before{background:radial-gradient(circle at 50% 0%,rgba(100,140,220,.14),transparent 70%)}
+.dc.pitta::before{background:radial-gradient(circle at 50% 0%,rgba(200,80,40,.14),transparent 70%)}
+.dc.kapha::before{background:radial-gradient(circle at 50% 0%,rgba(60,140,90,.14),transparent 70%)}
+.dc.on::before{opacity:1}
+.dc.on.vata{border-color:#6488dc}.dc.on.pitta{border-color:var(--rust)}.dc.on.kapha{border-color:var(--sage)}
+.dsym{font-family:var(--serif);font-size:26px;margin-bottom:7px;line-height:1}
+.dn{font-family:var(--serif);font-size:14px;color:var(--cream);margin-bottom:3px}
+.de{font-size:9px;letter-spacing:.06em;color:var(--m1);text-transform:uppercase}
+
+/* ── BUTTONS ── */
+.nr{display:flex;gap:12px;justify-content:flex-end;margin-top:22px}
+.btn{font-family:var(--sans);font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:12px 26px;border-radius:100px;border:none;cursor:pointer;transition:all .22s}
+.bg{background:transparent;border:1px solid var(--bdr2);color:var(--m2)}
+.bg:hover{border-color:var(--gold);color:var(--gold)}
+.bp{background:var(--gold);color:var(--bg);font-weight:600;box-shadow:0 4px 20px rgba(200,160,60,.22)}
+.bp:hover{background:var(--gold2);transform:translateY(-1px);box-shadow:0 6px 28px rgba(200,160,60,.38)}
+.bp:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+/* ── PAGE SYSTEM ── */
+.page{display:none}.page.on{display:block;animation:fadeUp .5s ease}
+
+/* ── LOADING ── */
+.ls{text-align:center;padding:60px 20px;position:relative;z-index:1}
+.lring{width:88px;height:88px;border-radius:50%;border:1px solid var(--bdr);border-top-color:var(--gold);animation:spinRing .9s linear infinite;margin:0 auto 24px;position:relative}
+.lring::after{content:'';position:absolute;inset:9px;border-radius:50%;border:1px solid var(--bdr);border-bottom-color:var(--gold2);animation:spinRing 1.4s linear infinite reverse}
+.lt{font-family:var(--serif);font-size:22px;color:var(--cream);margin-bottom:7px}
+.lp{font-size:10px;color:var(--m1);letter-spacing:.06em}
+.lm{font-family:var(--serif);font-style:italic;font-size:13px;color:var(--gold);margin-top:22px;opacity:.7;min-height:22px}
+
+/* ── RESULTS ── */
+.rh{text-align:center;padding:16px 0 24px}
+.rl2{font-family:var(--sans);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+.rg{font-family:var(--serif);font-size:clamp(44px,8vw,76px);font-weight:300;line-height:.88;margin-bottom:10px}
+.rg em{font-style:italic;color:var(--gold2)}
+.rs{font-size:12px;color:var(--m2);max-width:500px;margin:0 auto;line-height:1.8}
+.sw{display:flex;align-items:center;justify-content:center;gap:36px;flex-wrap:wrap;padding:24px 0}
+.rc{position:relative;width:160px;height:160px;flex-shrink:0}
+.rsvg{width:160px;height:160px;transform:rotate(-90deg)}
+.rbg{fill:none;stroke:var(--bg3);stroke-width:10}
+.rtr{fill:none;stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset 1.5s cubic-bezier(.16,1,.3,1)}
+.rcen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.rnum{font-family:var(--serif);font-size:44px;font-weight:300;color:var(--cream);line-height:1}
+.rden{font-size:12px;color:var(--m1)}
+.smeta{max-width:290px}
+.sgn{font-family:var(--serif);font-size:22px;color:var(--cream);margin-bottom:7px}
+.sgm{font-size:11px;color:var(--m2);line-height:1.8;margin-bottom:12px}
+.sqt{font-family:var(--serif);font-style:italic;font-size:13px;color:var(--gold);line-height:1.75}
+.sqsrc{font-size:9px;letter-spacing:.09em;text-transform:uppercase;font-style:normal;color:var(--m1);margin-top:5px}
+.cr{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid var(--bdr)}
+.cr:last-child{border:none;padding-bottom:0}
+.cicon{font-size:16px;width:24px;text-align:center;flex-shrink:0}
+.cinfo{flex:1;min-width:0}
+.cname{font-size:12px;color:var(--cream);margin-bottom:4px}
+.cnote{font-size:10px;color:var(--m1)}
+.cbar{flex:1}
+.ctrack{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden}
+.cfill{height:100%;border-radius:2px;transition:width 1.2s cubic-bezier(.16,1,.3,1);width:0%}
+.cscore{font-family:var(--serif);font-size:17px;color:var(--cream);width:30px;text-align:right;flex-shrink:0}
+.il{display:grid;gap:10px}
+.ii{display:flex;gap:12px;padding:12px 15px;background:var(--bg3);border-radius:10px;border:1px solid var(--bdr)}
+.ip{width:6px;height:6px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.pg{background:var(--sage);box-shadow:0 0 6px rgba(122,170,128,.5)}
+.pw{background:#d4a030;box-shadow:0 0 6px rgba(212,160,48,.5)}
+.pb{background:var(--rust);box-shadow:0 0 6px rgba(232,112,80,.5)}
+.it{font-size:11px;color:var(--m2);line-height:1.65}
+.remg{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:13px;margin-top:16px}
+.rem{background:var(--bg2);border:1px solid var(--bdr);border-radius:11px;padding:15px}
+.rtime{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.ract{font-family:var(--serif);font-size:16px;color:var(--cream);margin-bottom:5px}
+.rdesc{font-size:10px;color:var(--m1);line-height:1.65}
+.resetrow{text-align:center;margin-top:28px}
+
+/* score badge */
+.score-badge{display:inline-block;padding:6px 16px;border-radius:100px;font-family:var(--sans);font-size:10px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px}
+.badge-brahmic{background:rgba(122,170,128,.15);border:1px solid rgba(122,170,128,.3);color:var(--sage)}
+.badge-sattvic{background:rgba(200,160,60,.12);border:1px solid rgba(200,160,60,.25);color:var(--gold2)}
+.badge-rajasic{background:rgba(232,160,80,.1);border:1px solid rgba(232,160,80,.2);color:#e8a050}
+.badge-tamasic{background:rgba(232,112,80,.1);border:1px solid rgba(232,112,80,.2);color:var(--rust)}
+</style>
+</head>
+<body>
+<div id="cur"></div>
+<div id="cur-ring"></div>
+
+<div id="app">
+
+<!-- PAGE 0: Hero + Sleep -->
+<div class="page on" id="p0">
+  <div class="hero fu d1">
+    <div class="eyebrow">Ancient wisdom · Vedic science · AI analysis</div>
+    <div class="htitle"><em>Dincharya</em><br>Analyzer</div>
+    <div class="hsub">Discover how closely your daily rhythm aligns with the sacred science of Vedic dincharya — the art of living in harmony with natural cycles.</div>
+    <div class="hdiv"><span>☽</span></div>
+    <div class="hq">"Swastha means established in the Self — only then can the body be truly healthy."</div>
+    <div class="hqs">— Charaka Samhita</div>
+  </div>
+
+  <div class="steps fu d2">
+    <div class="sd cur"><div class="sc">I</div><span class="sl">Sleep</span></div>
+    <div class="sd"><div class="sc">II</div><span class="sl">Morning</span></div>
+    <div class="sd"><div class="sc">III</div><span class="sl">Meals</span></div>
+    <div class="sd"><div class="sc">IV</div><span class="sl">Mind</span></div>
+    <div class="sd"><div class="sc">V</div><span class="sl">Results</span></div>
+  </div>
+
+  <div class="card fu d3">
+    <div class="ch"><div class="ci">☽</div><div><div class="ct">Sleep & Waking</div><div class="cs">Foundation of all vitality (Ojas)</div></div></div>
+    <div class="g2">
+      <div class="fg"><div class="fl">Wake-up time</div><div class="fh">Ideal: before 6 AM (Brahma muhurta)</div><input type="time" id="wakeTime" value="06:30"></div>
+      <div class="fg"><div class="fl">Sleep time</div><div class="fh">Ideal: before 10 PM</div><input type="time" id="sleepTime" value="23:00"></div>
+    </div>
+    <div class="g2">
+      <div class="fg"><div class="fl">Hours of sleep</div><input type="number" id="sleepHrs" min="3" max="12" step="0.5" value="7"></div>
+      <div class="fg"><div class="fl">Morning sunlight</div>
+        <select id="sunlight"><option value="yes">Yes — within 30 min</option><option value="sometimes">Sometimes</option><option value="no">Rarely / never</option></select></div>
+    </div>
+    <div class="fg"><div class="fl">Sleep quality</div>
+      <select id="sleepQ"><option value="deep">Deep &amp; restful</option><option value="moderate" selected>Moderate — some disturbances</option><option value="poor">Poor — restless or broken</option></select></div>
+  </div>
+  <div class="nr"><button class="btn bp" onclick="goTo(1)">Continue →</button></div>
+</div>
+
+<!-- PAGE 1: Morning -->
+<div class="page" id="p1">
+  <div class="steps fu d1">
+    <div class="sd done"><div class="sc">I</div><span class="sl">Sleep</span></div>
+    <div class="sd cur"><div class="sc">II</div><span class="sl">Morning</span></div>
+    <div class="sd"><div class="sc">III</div><span class="sl">Meals</span></div>
+    <div class="sd"><div class="sc">IV</div><span class="sl">Mind</span></div>
+    <div class="sd"><div class="sc">V</div><span class="sl">Results</span></div>
+  </div>
+  <div class="card fu d2">
+    <div class="ch"><div class="ci">🌅</div><div><div class="ct">Morning Sadhana</div><div class="cs">Sacred practices that prepare body &amp; mind</div></div></div>
+    <div class="fg"><div class="fl" style="margin-bottom:8px">Practices you do regularly (select all)</div>
+      <div class="tags" id="morningTags">
+        <span class="tag" data-v="tonguescraping">Tongue Scraping</span>
+        <span class="tag" data-v="oilpulling">Oil Pulling</span>
+        <span class="tag" data-v="nasya">Nasya / Nasal Rinse</span>
+        <span class="tag" data-v="warmwater">Warm Water on Waking</span>
+        <span class="tag" data-v="meditation">Meditation</span>
+        <span class="tag" data-v="pranayama">Pranayama</span>
+        <span class="tag" data-v="yoga">Yoga / Stretching</span>
+        <span class="tag" data-v="abhyanga">Abhyanga (Self-massage)</span>
+        <span class="tag" data-v="exercise">Exercise / Walk</span>
+        <span class="tag" data-v="prayer">Prayer / Mantra</span>
+      </div>
+    </div>
+    <div class="g2" style="margin-top:12px">
+      <div class="fg"><div class="fl">Breakfast timing</div>
+        <select id="breakfast"><option value="early">Before 8 AM</option><option value="mid" selected>8–10 AM</option><option value="late">After 10 AM</option><option value="skip">Skip breakfast</option></select></div>
+      <div class="fg"><div class="fl">Breakfast quality</div>
+        <select id="breakfastQ"><option value="warm">Warm, freshly cooked</option><option value="mixed" selected>Mixed</option><option value="cold">Cold or processed</option></select></div>
+    </div>
+  </div>
+  <div class="nr"><button class="btn bg" onclick="goTo(0)">← Back</button><button class="btn bp" onclick="goTo(2)">Continue →</button></div>
+</div>
+
+<!-- PAGE 2: Meals -->
+<div class="page" id="p2">
+  <div class="steps fu d1">
+    <div class="sd done"><div class="sc">I</div><span class="sl">Sleep</span></div>
+    <div class="sd done"><div class="sc">II</div><span class="sl">Morning</span></div>
+    <div class="sd cur"><div class="sc">III</div><span class="sl">Meals</span></div>
+    <div class="sd"><div class="sc">IV</div><span class="sl">Mind</span></div>
+    <div class="sd"><div class="sc">V</div><span class="sl">Results</span></div>
+  </div>
+  <div class="card fu d2">
+    <div class="ch"><div class="ci">🔥</div><div><div class="ct">Agni &amp; Digestion</div><div class="cs">The sacred fire that transforms food into life-force</div></div></div>
+    <div class="g2">
+      <div class="fg"><div class="fl">Largest meal of day</div><div class="fh">Ideal: noon when Agni peaks</div>
+        <select id="mainMeal"><option value="noon">Noon (12–2 PM) ✓</option><option value="evening" selected>Evening (after 6 PM)</option><option value="morning">Morning</option><option value="variable">Varies daily</option></select></div>
+      <div class="fg"><div class="fl">Dinner time</div><div class="fh">Ideal: before 7 PM</div><input type="time" id="dinnerTime" value="20:00"></div>
+    </div>
+    <div class="g2" style="margin-top:12px">
+      <div class="fg"><div class="fl">Water temperature</div>
+        <select id="water"><option value="warm">Warm / room temp ✓</option><option value="cold" selected>Cold or iced</option><option value="mixed">Mixed</option></select></div>
+      <div class="fg"><div class="fl">Meals per day</div><input type="number" id="meals" min="1" max="6" value="3"></div>
+    </div>
+    <div class="g2" style="margin-top:12px">
+      <div class="fg"><div class="fl">Mindful eating (no screens)</div>
+        <select id="mindful"><option value="yes">Yes, always</option><option value="sometimes" selected>Sometimes</option><option value="no">Rarely</option></select></div>
+      <div class="fg"><div class="fl">Snacking between meals</div>
+        <select id="snacking"><option value="no">Rarely / never ✓</option><option value="sometimes" selected>Occasionally</option><option value="yes">Frequent snacking</option></select></div>
+    </div>
+  </div>
+  <div class="nr"><button class="btn bg" onclick="goTo(1)">← Back</button><button class="btn bp" onclick="goTo(3)">Continue →</button></div>
+</div>
+
+<!-- PAGE 3: Mind -->
+<div class="page" id="p3">
+  <div class="steps fu d1">
+    <div class="sd done"><div class="sc">I</div><span class="sl">Sleep</span></div>
+    <div class="sd done"><div class="sc">II</div><span class="sl">Morning</span></div>
+    <div class="sd done"><div class="sc">III</div><span class="sl">Meals</span></div>
+    <div class="sd cur"><div class="sc">IV</div><span class="sl">Mind</span></div>
+    <div class="sd"><div class="sc">V</div><span class="sl">Results</span></div>
+  </div>
+  <div class="card fu d2">
+    <div class="ch"><div class="ci">🌿</div><div><div class="ct">Mind &amp; Evening</div><div class="cs">The close of day shapes the quality of rest</div></div></div>
+    <div class="fg"><div class="fl" style="margin-bottom:8px">Evening &amp; daily habits (select all)</div>
+      <div class="tags" id="eveningTags">
+        <span class="tag" data-v="nature">Time in nature daily</span>
+        <span class="tag" data-v="journaling">Journaling</span>
+        <span class="tag" data-v="reading">Reading before sleep</span>
+        <span class="tag" data-v="gratitude">Gratitude practice</span>
+        <span class="tag" data-v="nophones">No phones in bedroom</span>
+        <span class="tag" data-v="warmfoot">Warm foot massage</span>
+        <span class="tag" data-v="consistent">Consistent bedtime</span>
+        <span class="tag" data-v="screenoff">Screens off 1hr before bed</span>
+      </div>
+    </div>
+    <div class="fg" style="margin-top:14px"><div class="fl">Current stress level</div>
+      <div class="rw">
+        <span class="rv" id="sv">5</span>
+        <input type="range" id="stress" min="1" max="10" value="5" step="1" oninput="document.getElementById('sv').textContent=this.value">
+        <div class="rl"><span>Low (1)</span><span>High (10)</span></div>
+      </div>
+    </div>
+    <div class="fg" style="margin-top:14px"><div class="fl" style="margin-bottom:12px">Dominant dosha</div>
+      <div class="dg">
+        <div class="dc vata on" data-d="vata" onclick="pickD(this)"><div class="dsym">𝓥</div><div class="dn">Vata</div><div class="de">Air · Space</div></div>
+        <div class="dc pitta" data-d="pitta" onclick="pickD(this)"><div class="dsym">𝓟</div><div class="dn">Pitta</div><div class="de">Fire · Water</div></div>
+        <div class="dc kapha" data-d="kapha" onclick="pickD(this)"><div class="dsym">𝓚</div><div class="dn">Kapha</div><div class="de">Earth · Water</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="nr"><button class="btn bg" onclick="goTo(2)">← Back</button><button class="btn bp" id="abtn" onclick="analyze()">Analyze Routine ✦</button></div>
+</div>
+
+<!-- PAGE 4: Loading -->
+<div class="page" id="p4">
+  <div class="ls">
+    <div class="lring"></div>
+    <div class="lt">Consulting the ancients…</div>
+    <div class="lp" id="lphase">Calculating your dincharya alignment</div>
+    <div class="lm" id="lmantra"></div>
+  </div>
+</div>
+
+<!-- PAGE 5: Results -->
+<div class="page" id="p5"><div id="rinner"></div></div>
+
+</div><!-- #app -->
+
+<script>
+// ── CURSOR ──
+const cur=document.getElementById('cur'),ring=document.getElementById('cur-ring');
+document.addEventListener('mousemove',e=>{
+  cur.style.left=e.clientX+'px';cur.style.top=e.clientY+'px';
+  setTimeout(()=>{ring.style.left=e.clientX+'px';ring.style.top=e.clientY+'px';},80);
+});
+
+// ── TAGS ──
+document.querySelectorAll('.tag').forEach(t=>t.addEventListener('click',()=>t.classList.toggle('on')));
+function getTags(id){return[...document.querySelectorAll('#'+id+' .tag.on')].map(t=>t.dataset.v)}
+
+// ── DOSHA ──
+function pickD(el){document.querySelectorAll('.dc').forEach(d=>d.classList.remove('on'));el.classList.add('on')}
+function getDosha(){const d=document.querySelector('.dc.on');return d?d.dataset.d:'vata'}
+
+// ── NAV ──
+function goTo(n){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.getElementById('p'+n).classList.add('on');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── MANTRAS ──
+const MANTRAS=[
+  '"Sarve bhavantu sukhinah — May all beings be happy."',
+  '"Aahar, Nidra, Brahmacharya — the three pillars of life."',
+  '"Nadi follows prana; prana follows mind."',
+  '"The body is the vehicle; the Self is the driver."',
+  '"When diet is correct, medicine is of no need."',
+];
+const PHASES=['Mapping sleep to natural cycles…','Weighing your morning sadhana…','Assessing the fire of Agni…','Reading your dosha alignment…','Composing your Vedic report…'];
+let mi=0;
+function cycleM(){document.getElementById('lmantra').textContent=MANTRAS[mi++%MANTRAS.length]}
+
+// ══════════════════════════════════════════════════════
+// ── 20 PRE-STORED RESULT PROFILES ──
+// Each profile matches different lifestyle patterns
+// ══════════════════════════════════════════════════════
+const PROFILES = [
+  // 0 — Brahmic: Perfect routine (early riser, meditates, ideal meals)
+  {
+    score:94, gradeName:'Brahmic', gradeMeaning:'The most elevated state — aligned with cosmic rhythm, prana flows freely and Ojas is abundant.',
+    summary:'Your daily rhythm is in exceptional harmony with Vedic dincharya. Waking before sunrise, maintaining sacred morning practices, and eating mindfully places you among the rare few who truly embody the ancient wisdom of balanced living. Your Ojas is strong and your Agni burns bright.',
+    categories:[
+      {name:'Sleep & Waking',icon:'☽',score:96,note:'Perfect Brahma muhurta timing'},
+      {name:'Morning Sadhana',icon:'🌅',score:95,note:'Rich sacred morning practice'},
+      {name:'Agni & Digestion',icon:'🔥',score:92,note:'Excellent digestive alignment'},
+      {name:'Mind & Prana',icon:'🌿',score:94,note:'Strong sattvic mental habits'},
+      {name:'Dosha Harmony',icon:'⚖️',score:93,note:'Well-balanced constitution care'},
+    ],
+    insights:[
+      {type:'good',text:'Waking during Brahma muhurta (before 6 AM) is the single most powerful thing you can do for vitality. The cosmic energy at this hour fills the prana channels, setting a radiant tone for the entire day.'},
+      {type:'good',text:'Your morning sadhana practice with meditation and pranayama creates a sattvic (pure) mental atmosphere that protects you from the Rajasic noise of modern life throughout the day.'},
+      {type:'warn',text:'Even for those with excellent routines, occasional Abhyanga (self-massage with warm sesame oil) can be deepened — consider dedicating 15 uninterrupted minutes rather than a quick application.'},
+      {type:'warn',text:'Ensure your dinner remains light — even one heavy evening meal a week can accumulate Ama (digestive toxins) over time, diminishing your otherwise strong Agni.'},
+      {type:'bad',text:'No routine is immune to seasonal drift. Ayurveda emphasizes Ritucharya (seasonal routine adjustment). Revisit your practices as seasons change to maintain this elevated alignment.'},
+      {type:'bad',text:'Guard against complacency — the Vedic texts warn that even the most refined practitioner must remain vigilant, as pride in one\'s sadhana can subtly introduce Rajas into the practice.'},
+    ],
+    remedies:[
+      {time:'Upon waking',action:'Brahma Muhurta Pranayama',desc:'Perform 12 rounds of Nadi Shodhana before dawn to cleanse energy channels and set a sattvic tone for the day.'},
+      {time:'Midday',action:'Surya Namskar Meditation',desc:'A brief 5-minute sun-gazing meditation at solar noon aligns your internal fire with the cosmic fire of the sun.'},
+      {time:'Evening',action:'Trataka (candle gazing)',desc:'10 minutes of soft candle gazing in the evening stabilizes Vata and prepares the nervous system for deep sleep.'},
+      {time:'Before sleep',action:'Milk with Ashwagandha',desc:'Warm milk with a pinch of Ashwagandha and cardamom builds Ojas overnight and ensures rejuvenating sleep.'},
+    ],
+    vedaQuote:'Hitaharam mitaharam niyataharam eva ca — eat what is wholesome, eat moderately, eat regularly.',
+    vedaSource:'Charaka Samhita, Sutrasthana'
+  },
+
+  // 1 — Sattvic: Good routine (reasonable wake time, some practices)
+  {
+    score:78, gradeName:'Sattvic',gradeMeaning:'A pure and balanced state — your daily rhythm supports clarity, health and spiritual growth with minor refinements needed.',
+    summary:'Your routine demonstrates a sincere and growing alignment with Vedic principles. You have laid a solid foundation of healthy habits and your Agni is reasonably strong. With targeted improvements to your morning sadhana and meal timing, you can cross into the Brahmic zone.',
+    categories:[
+      {name:'Sleep & Waking',icon:'☽',score:74,note:'Slightly late — can improve'},
+      {name:'Morning Sadhana',icon:'🌅',score:80,note:'Good practices, room to deepen'},
+      {name:'Agni & Digestion',icon:'🔥',score:79,note:'Moderate Agni alignment'},
+      {name:'Mind & Prana',icon:'🌿',score:82,note:'Calm mind, good habits'},
+      {name:'Dosha Harmony',icon:'⚖️',score:76,note:'Reasonable dosha balance'},
+    ],
+    insights:[
+      {type:'good',text:'Your consistent meditation practice is building a strong Sattvic foundation. Even 15 minutes daily creates a protective layer of mental clarity that Ayurveda calls Prajna — awakened intelligence.'},
+      {type:'good',text:'Choosing warm water over cold shows an intuitive understanding of Agni. Cold water is like pouring cold water on a fire — your warm water habit keeps your digestive enzymes active and strong.'},
+      {type:'warn',text:'Try shifting your wake-up time 30 minutes earlier each week until you reach 5:30 AM. The Vata energy of early morning carries creative intelligence — your mind will feel cleaner and more focused.'},
+      {type:'warn',text:'Add tongue scraping to your morning routine immediately. This 60-second practice removes Ama (toxins) that accumulate on the tongue overnight and directly stimulates digestive organs.'},
+      {type:'bad',text:'Evening meals after 7:30 PM force your digestive system to work while your body prepares for rest, creating undigested food residue (Ama) that clouds the mind and weakens immunity over time.'},
+      {type:'bad',text:'Your stress level suggests Pitta imbalance — competitiveness and urgency are Pitta qualities that, left unchecked, inflame both body and mind. Cooling practices like moon bathing or coconut oil massage are prescribed.'},
+    ],
+    remedies:[
+      {time:'Upon waking',action:'Copper vessel water ritual',desc:'Store water overnight in a copper vessel and drink it upon waking — copper infuses Prana into water and balances all three doshas.'},
+      {time:'Midday',action:'Post-lunch Vajrasana',desc:'Sit in Vajrasana (thunderbolt pose) for 10 minutes after lunch — the only pose recommended after meals as it dramatically improves digestion.'},
+      {time:'Evening',action:'Nature walk (barefoot)',desc:'10 minutes of barefoot walking on grass connects you to Earth energy, drawing out excess Vata and Pitta accumulated during the day.'},
+      {time:'Before sleep',action:'Padabhyanga (foot massage)',desc:'Massage warm sesame oil into your feet before bed — this grounds Vata, calms the nervous system, and improves sleep depth significantly.'},
+    ],
+    vedaQuote:'Svastha svastha rakshanam — the first duty of medicine is to preserve the health of the healthy.',
+    vedaSource:'Ashtanga Hridayam'
+  },
+
+  // 2 — Rajasic: Average modern lifestyle
+  {
+    score:52, gradeName:'Rajasic',gradeMeaning:'An active and stimulated state — your routine reflects the pace of modern life but creates excess heat, restlessness, and scattered Prana.',
+    summary:'Your routine reflects the energetic but ungrounded patterns of modern life. There is vitality present, but it is being spent rather than cultivated. The Rajasic quality of your daily rhythm keeps you productive but prevents deep restoration. Several key adjustments can transform your energy from reactive to radiant.',
+    categories:[
+      {name:'Sleep & Waking',icon:'☽',score:48,note:'Late nights disturbing Ojas'},
+      {name:'Morning Sadhana',icon:'🌅',score:45,note:'Minimal morning practices'},
+      {name:'Agni & Digestion',icon:'🔥',score:55,note:'Irregular meal timing'},
+      {name:'Mind & Prana',icon:'🌿',score:58,note:'Moderate stress, some habits'},
+      {name:'Dosha Harmony',icon:'⚖️',score:54,note:'Imbalance building slowly'},
+    ],
+    insights:[
+      {type:'good',text:'You are eating 3 meals a day with some degree of regularity — this alone prevents the worst digestive disorders. Ayurveda values meal regularity above meal content for maintaining strong Agni.'},
+      {type:'good',text:'Your body\'s resilience is still intact. The fact that you are inquiring about your routine shows Viveka (discriminative intelligence) — the first step toward transformation in Ayurvedic philosophy.'},
+      {type:'warn',text:'Sleeping after 11 PM means you miss the crucial Kapha phase of early night (10 PM–2 AM) when the body performs deep tissue repair. Move bedtime to 10 PM gradually — even 15 minutes earlier per week.'},
+      {type:'warn',text:'Start with just one morning practice: warm water with lemon and ginger upon waking. This single habit kindles Agni, flushes Ama, and creates a conscious pause before the day\'s Rajasic rush begins.'},
+      {type:'bad',text:'Drinking cold water extinguishes Agni, creating undigested food particles that Ayurveda calls Ama — the root cause of most disease. Switch to room temperature or warm water immediately for visible results within weeks.'},
+      {type:'bad',text:'Your current pattern is accumulating Vata in the nervous system — late nights, irregular meals, and screen exposure before bed are the three main Vata-aggravating factors. This manifests as anxiety, poor focus, and disturbed sleep over time.'},
+    ],
+    remedies:[
+      {time:'Upon waking',action:'Ushnodaka (warm water) ritual',desc:'Drink 2 glasses of warm water immediately upon waking to flush the digestive system, stimulate bowels, and activate Agni for the day.'},
+      {time:'Midday',action:'Mindful lunch without screens',desc:'Eating your largest meal at noon in silence activates the Parasympathetic nervous system, doubling digestive efficiency and absorbing more nutrients.'},
+      {time:'Evening',action:'Digital sunset at 9 PM',desc:'Turn off all screens one hour before bed — blue light suppresses melatonin and activates Pitta, making both sleep initiation and sleep quality significantly worse.'},
+      {time:'Before sleep',action:'Brahmi oil head massage',desc:'5 minutes of Brahmi oil massage on the scalp before bed calms the overactive Rajasic mind, reduces cortisol, and deepens sleep quality.'},
+    ],
+    vedaQuote:'Nidra sukham dukham pushti karshanam — sleep is the source of both happiness and suffering, health and disease.',
+    vedaSource:'Charaka Samhita, Sutrasthana 21'
+  },
+
+  // 3 — Tamasic: Poor routine (very late, no practices, bad food)
+  {
+    score:28, gradeName:'Tamasic',gradeMeaning:'A heavy and depleted state — the body\'s natural rhythms are significantly disrupted, causing accumulation of Ama and depletion of Ojas.',
+    summary:'Your current routine is working against your body\'s natural healing intelligence. The combination of late sleep, minimal morning practices, and irregular eating is creating a significant accumulation of Ama (metabolic waste) in your system. The good news: even small, consistent changes produce dramatic results quickly — your body is intelligent and responds immediately to supportive habits.',
+    categories:[
+      {name:'Sleep & Waking',icon:'☽',score:22,note:'Severely misaligned circadian rhythm'},
+      {name:'Morning Sadhana',icon:'🌅',score:20,note:'No morning practices present'},
+      {name:'Agni & Digestion',icon:'🔥',score:30,note:'Weak and irregular Agni'},
+      {name:'Mind & Prana',icon:'🌿',score:35,note:'High stress, Tamas accumulating'},
+      {name:'Dosha Harmony',icon:'⚖️',score:32,note:'Significant dosha disturbance'},
+    ],
+    insights:[
+      {type:'good',text:'The fact that you completed this assessment means your intelligence is seeking change. Ayurveda teaches that the desire for health is itself a healing force — honor this impulse by taking one small action today.'},
+      {type:'good',text:'Your body is remarkably resilient. Thousands of years of Vedic medical science confirms that even severely disrupted constitutions can be restored within 3-4 weeks of consistent dincharya practice.'},
+      {type:'warn',text:'Begin with just one change: drink warm water every morning before anything else. This is the single most powerful and accessible Ayurvedic practice — it costs nothing and takes 2 minutes.'},
+      {type:'warn',text:'Try to sleep 30 minutes earlier for one week. Sleep before midnight is worth twice as much as sleep after midnight according to Ayurvedic chronobiology — you will notice the difference immediately.'},
+      {type:'bad',text:'Late-night eating is depositing Ama directly into your tissues. The digestive fire (Agni) is virtually extinguished after 9 PM — food eaten then ferments rather than digests, creating the root of most chronic conditions.'},
+      {type:'bad',text:'Your nervous system is in a chronic state of Vata aggravation — the fight-or-flight response is stuck in the "on" position. This depletes Ojas (vital essence) and creates the foundation for burnout, anxiety, and immune weakness.'},
+    ],
+    remedies:[
+      {time:'Upon waking',action:'Triphala morning flush',desc:'Drink 1 tsp Triphala powder dissolved in warm water every morning — this ancient formulation gently detoxifies, kindles Agni, and rebuilds digestive intelligence over weeks.'},
+      {time:'Midday',action:'Single sattvic meal',desc:'Eat one fully present, warm, cooked meal today — even one mindful meal plants a seed of Sattvic energy that begins to shift the body\'s pattern.'},
+      {time:'Evening',action:'Ashwagandha milk',desc:'Warm milk with Ashwagandha before 8 PM begins rebuilding Ojas immediately — this adaptogen directly counters the exhaustion of Tamas and Vata depletion.'},
+      {time:'Before sleep',action:'Yoga Nidra',desc:'Even 20 minutes of Yoga Nidra (guided body-scan relaxation) provides the nervous system restoration equivalent of 2 hours of ordinary sleep — begin tonight.'},
+    ],
+    vedaQuote:'Rogah sarvepi mandagnau — all diseases without exception arise from weak digestive fire.',
+    vedaSource:'Ashtanga Hridayam, Nidanasthana'
+  },
+
+  // 4 — Early riser, no practices
+  {
+    score:61, gradeName:'Sattvic',gradeMeaning:'A balanced and clear state with significant untapped potential in your morning hours.',
+    summary:'You have the rare gift of early rising but are leaving the most powerful hours of the day unused. Waking before 6 AM gives you access to Brahma muhurta energy — but without morning practices to harness it, this gift dissipates. Your digestive habits are solid; your morning routine is your primary growth edge.',
+    categories:[
+      {name:'Sleep & Waking',icon:'☽',score:88,note:'Excellent wake time — underutilized'},
+      {name:'Morning Sadhana',icon:'🌅',score:30,note:'Early riser but no practices'},
+      {name:'Agni & Digestion',icon:'🔥',score:68,note:'Good meal structure'},
+      {name:'Mind & Prana',icon:'🌿',score:60,note:'Moderate mind habits'},
+      {name:'Dosha Harmony',icon:'⚖️',score:62,note:'Reasonable balance'},
+    ],
+    insights:[
+      {type:'good',text:'Waking in Brahma muhurta (before 6 AM) is considered one of the most precious habits in all of Ayurveda. The Vata energy of this hour carries creative intelligence and expanded consciousness — you are waking at the right time.'},
+      {type:'good',text:'Your regular meal schedule is protecting your Agni from the erratic fluctuations that plague most modern people. Agni thrives on regularity — it anticipates meal times and prepares digestive enzymes accordingly.'},
+      {type:'warn',text:'Add tongue scraping the moment you wake. This 60-second practice physically removes Ama (toxins) deposited on the tongue overnight and sends a signal to your entire digestive system to wake up.'},
+      {type:'warn',text:'Even 10 minutes of Pranayama after waking would transform your mornings. Nadi Shodhana (alternate nostril breathing) balances both hemispheres of the brain and creates a calm, focused mental state for the entire day.'},
+      {type:'bad',text:'You are consuming the most powerful hours of the day — 4 AM to 6 AM — without planting seeds of practice. The Vedic texts call this "Amrita Vela" (nectar time) and say what is done in these hours multiplies throughout the day.'},
+      {type:'bad',text:'Without a grounding morning practice, early risers often find their mind immediately captured by phones, news, or tasks — this instantly converts Sattvic Brahma muhurta energy into Rajasic anxiety.'},
+    ],
+    remedies:[
+      {time:'Upon waking',action:'5-4-3-2-1 Sadhana',desc:'Tongue scrape, drink warm water, 5 min pranayama, 3 min gratitude, 1 sun salutation — a complete micro-practice in under 15 minutes.'},
+      {time:'Midday',action:'Post-meal Vajrasana',desc:'Sit in Vajrasana for 10 minutes after your largest meal to dramatically improve digestion and nutrient absorption.'},
+      {time:'Evening',action:'Oil lamp meditation',desc:'5 minutes of Trataka (candle or oil lamp gazing) in the evening trains the mind into one-pointed focus and reduces the scattered Vata of the day.'},
+      {time:'Before sleep',action:'Gratitude journaling',desc:'Writing 3 genuine gratitudes before sleep programs the subconscious toward Sattvic quality — you will notice improved dream quality and morning mood within days.'},
+    ],
+    vedaQuote:'Brahme muhurte uttishthet swastho rakshartham ayushah — the healthy person should rise during Brahma muhurta to protect their lifespan.',
+    vedaSource:'Ashtanga Hridayam, Sutrasthana 2'
+  },
+
+  // 5 — Night owl, heavy practices
+  {
+    score:55, gradeName:'Rajasic',gradeMeaning:'Active and capable but running against the natural rhythm — daytime potential is limited by nighttime resistance.',
+    summary:'Your impressive commitment to practices like yoga, meditation, and pranayama is being significantly undermined by late sleeping patterns. You are building a beautiful structure on an unstable foundation. The Vedic clock runs from 6 PM onward — late nights are the single biggest disruptor of all the practices you are doing.',
+    categories:[
+      {name:'Sleep & Waking',icon:'☽',score:28,note:'Late sleep depletes Ojas nightly'},
+      {name:'Morning Sadhana',icon:'🌅',score:85,note:'Excellent practices — well done'},
+      {name:'Agni & Digestion',icon:'🔥',score:60,note:'Good food choices, late timing'},
+      {name:'Mind & Prana',icon:'🌿',score:72,note:'Strong practice but tired mind'},
+      {name:'Dosha Harmony',icon:'⚖️',score:58,note:'Pitta aggravated by late activity'},
+    ],
+    insights:[
+      {type:'good',text:'Your dedication to morning practices — yoga, pranayama, and meditation — shows genuine spiritual commitment. These practices are building Sattva in your system that will serve you for life.'},
+      {type:'good',text:'The quality of your food awareness is evident. Understanding that warm, cooked food nourishes differently than cold, processed food shows an intuitive alignment with Ayurvedic food science.'},
+      {type:'warn',text:'Your practices would double in effectiveness if you could shift sleep to before 11 PM. The body regenerates Ojas between 10 PM and 2 AM — staying awake during this window forces your practices to draw from an empty well.'},
+      {type:'warn',text:'Consider moving your yoga practice to the morning rather than evening. Evening yoga can become stimulating and delay sleep — morning practice with empty stomach is considered the most potent time in Ayurvedic texts.'},
+      {type:'bad',text:'Staying awake past 11 PM activates Pitta and creates a second wind of mental energy that feels productive but is actually burning through your vital reserve. Night owls often feel simultaneously exhausted and unable to sleep — this is classic Pitta-Vata aggravation.'},
+      {type:'bad',text:'All the Ojas you are building with your practices is being depleted by late nights. Ojas is produced between 10 PM and 2 AM during deep sleep — without this window, your practices maintain rather than build vitality.'},
+    ],
+    remedies:[
+      {time:'Upon waking',action:'Sheetali Pranayama',desc:'This cooling breath technique immediately pacifies the Pitta aggravated by late nights, bringing clarity and calm to your morning practice.'},
+      {time:'Midday',action:'Coconut oil pulling',desc:'Swish 1 tbsp of coconut oil for 15 minutes at midday — coconut\'s cooling properties pacify Pitta and remove inflammation from the oral tissues.'},
+      {time:'Evening',action:'Kansa wand foot massage',desc:'A Kansa metal foot massage in the evening extracts excess heat (Pitta) from the body through the feet, naturally inducing sleepiness by 10 PM.'},
+      {time:'Before sleep',action:'Moon gazing (Trataka)',desc:'10 minutes of soft moon gazing channels cool lunar energy to pacify Pitta — particularly beneficial for night owls whose fire element tends toward excess.'},
+    ],
+    vedaQuote:'Ahita mitabhuk ca syat kale kale ca bhojanat — eat what is wholesome and in proper quantity at the right times.',
+    vedaSource:'Charaka Samhita, Sutrasthana 5'
+  },
+
+  // 6 — Kapha dominant, sluggish morning
+  {
+    score:46, gradeName:'Rajasic',gradeMeaning:'Clouded by excess Kapha — the heaviness of earth and water elements is dampening your inner fire and slowing vital momentum.',
+    summary:'Your Kapha constitution is expressing its shadow side — the beautiful qualities of stability and nourishment have tipped into heaviness and sluggishness. Late morning rising, heavy food, and long sleep are all feeding Kapha excess. You need fire — in your wake time, your food, and your movement practice.',
+    categories:[
+      {name:'Sleep & Waking',icon:'☽',score:35,note:'Excess sleep aggravates Kapha'},
+      {name:'Morning Sadhana',icon:'🌅',score:42,note:'Sluggish start, minimal fire'},
+      {name:'Agni & Digestion',icon:'🔥',score:50,note:'Slow Agni typical of Kapha'},
+      {name:'Mind & Prana',icon:'🌿',score:48,note:'Heaviness in mind and body'},
+      {name:'Dosha Harmony',icon:'⚖️',score:55,note:'Kapha pacification needed'},
+    ],
+    insights:[
+      {type:'good',text:'Your Kapha nature gives you extraordinary endurance, patience, and emotional stability — these are precious gifts that Vata and Pitta types deeply lack. The task is not to change your nature but to keep its energy flowing rather than accumulating.'},
+      {type:'good',text:'Your tendency toward regular, structured eating habits reflects Kapha\'s love of routine — channel this strength consciously into a fixed dincharya schedule and you will see rapid transformation.'},
+      {type:'warn',text:'For Kapha types, waking before 6 AM is not optional — it is medicine. Sleeping during Kapha time (6 AM–10 AM) literally feeds the imbalance, creating mental fog, weight gain, and sluggishness that persists all day.'},
+      {type:'warn',text:'Add vigorous Kapalabhati (skull-shining breath) to every morning — 3 rounds of 100 breaths. This forceful breathing stokes the digestive fire, clears mucus from the lungs, and ignites Kapha\'s dormant energy.'},
+      {type:'bad',text:'Skipping breakfast or eating heavy, sweet, cold food in the morning is the worst thing for Kapha — it literally builds more earth and water in an already heavy system. Opt for spiced, warming, light foods like ginger tea and millet.'},
+      {type:'bad',text:'Kapha excess is the most insidious of the three doshic imbalances because it feels comfortable — heaviness, extra sleep, sweet cravings all feel like self-care but are actually disease accumulating slowly and silently.'},
+    ],
+    remedies:[
+      {time:'Upon waking',action:'Dry brushing (Garshana)',desc:'Vigorous dry brushing with raw silk or linen gloves before bathing stimulates lymphatic flow, breaks up Kapha accumulation, and creates immediate energizing warmth.'},
+      {time:'Midday',action:'Trikatu spice blend',desc:'Add Trikatu (ginger, black pepper, long pepper) to your noon meal — this ancient formulation specifically kindles Kapha\'s sluggish Agni and metabolizes accumulated toxins.'},
+      {time:'Evening',action:'Evening vigorous walk',desc:'A 20-minute brisk walk in the evening burns accumulated Kapha and prevents the evening heaviness that pulls Kapha types toward the couch and away from their bedtime routine.'},
+      {time:'Before sleep',action:'Light early dinner',desc:'Eat your last meal before 6 PM and make it light — soup or kitchari are ideal. An empty, comfortable stomach at bedtime prevents Kapha accumulation during night.'},
+    ],
+    vedaQuote:'Kapha prakritir hi guru shleshma sthira shita snigdha — Kapha by nature is heavy, stable, cold and oily; these must be countered by their opposites.',
+    vedaSource:'Ashtanga Hridayam, Sutrasthana 1'
+  },
+
+  // 7 — High stress, good physical but poor mental
+  {
+    score:58, gradeName:'Rajasic',gradeMeaning:'Strong physical foundation undermined by mental Rajas — the fire of activity has become the fire of agitation.',
+    summary:'Your physical routine is genuinely commendable — exercise, structured meals, and reasonable sleep timing show real commitment to the body. But your mental landscape is Rajasic — high stress, constant stimulation, and the absence of stillness practices are burning through your vitality faster than your physical habits build it.',
+    categories:[
+      {name:'Sleep & Waking',icon:'☽',score:66,note:'Decent timing, poor quality'},
+      {name:'Morning Sadhana',icon:'🌅',score:60,note:'Physical but not contemplative'},
+      {name:'Agni & Digestion',icon:'🔥',score:65,note:'Good food, stressed digestion'},
+      {name:'Mind & Prana',icon:'🌿',score:38,note:'High stress corroding gains'},
+      {name:'Dosha Harmony',icon:'⚖️',score:60,note:'Pitta-Vata aggravation building'},
+    ],
+    insights:[
+      {type:'good',text:'Your commitment to exercise is building Bala (strength) and Oja (vital essence) that counteracts many of the negative effects of stress. Physical movement is one of the three pillars of Ayurvedic prevention — you are honoring it.'},
+      {type:'good',text:'Eating structured meals rather than stress-snacking shows discipline in the face of a demanding life. Your Agni has a fighting chance because you are not constantly confusing it with erratic food timing.'},
+      {type:'warn',text:'Your high stress score (Pitta aggravation) means your body is digesting in fight-or-flight mode — even perfect food is being processed poorly. Adding even 5 minutes of slow breathing before meals would dramatically improve nutrient absorption.'},
+      {type:'warn',text:'Consider replacing one exercise session per week with Yoga Nidra or Restorative Yoga — these practices heal the adrenal fatigue that high-stress, high-exercise lifestyles create and are exponentially more restorative than active practices.'},
+      {type:'bad',text:'Unmanaged stress is the most potent disease-causing force in Ayurveda — it disrupts all three doshas simultaneously, weakens Agni, depletes Ojas, and blocks the body\'s intelligence. No amount of physical practice compensates for chronic mental Rajas.'},
+      {type:'bad',text:'High cortisol from sustained stress is measurably breaking down the physical gains you are making through exercise. Ayurveda would say you are "pouring water into a pot with holes" — the stress creates the leak.'},
+    ],
+    remedies:[
+      {time:'Upon waking',action:'Shanmukhi Mudra meditation',desc:'Close all six sense gates with fingers and observe internal sound for 5 minutes — this practice directly accesses the parasympathetic nervous system, reducing cortisol within one session.'},
+      {time:'Midday',action:'Sattvic lunch pause',desc:'Take 20 full minutes away from work for lunch — eat slowly, chew 32 times, no phone. This single practice measurably reduces afternoon stress hormones and improves mental clarity.'},
+      {time:'Evening',action:'Shirodhara self-practice',desc:'Apply warm sesame oil to the forehead in a thin stream while lying down for 10 minutes — this home approximation of the classic Shirodhara treatment melts mental stress rapidly.'},
+      {time:'Before sleep',action:'Ashwagandha Shatavari milk',desc:'This potent adaptogen combination directly rebuilds the adrenal reserve depleted by chronic stress, rebuilding Ojas over 4-6 weeks of consistent use.'},
+    ],
+    vedaQuote:'Manasah karanaih rogah — diseases arise first in the mind before they manifest in the body.',
+    vedaSource:'Charaka Samhita, Sharira Sthana 1'
+  },
+
+  // 8 — Pitta dominant, intense lifestyle
+  {
+    score:63, gradeName:'Sattvic',gradeMeaning:'Capable and driven, but the inner fire is becoming the inner flame — Pitta\'s gifts of focus and transformation need cooling to become sustainable.',
+    summary:'Your Pitta constitution gives you remarkable drive, focus, and the ability to achieve. Your routine reflects these gifts — structured, productive, goal-oriented. But Pitta in excess creates the very things that undermine achievement: inflammation, irritability, and burnout. Your routine needs strategic cooling.',
+    categories:[
+      {name:'Sleep & Waking',icon:'☽',score:65,note:'Decent but fire burns at night'},
+      {name:'Morning Sadhana',icon:'🌅',score:68,note:'Disciplined but intense practice'},
+      {name:'Agni & Digestion',icon:'🔥',score:70,note:'Strong Agni — watch for excess fire'},
+      {name:'Mind & Prana',icon:'🌿',score:58,note:'Driven but lacks surrender'},
+      {name:'Dosha Harmony',icon:'⚖️',score:55,note:'Pitta needs intentional cooling'},
+    ],
+    insights:[
+      {type:'good',text:'Your strong Agni means you can digest both food and life experiences efficiently — this is Pitta\'s greatest metabolic gift. Your body converts inputs to energy quickly and your mind processes information rapidly.'},
+      {type:'good',text:'Your disciplined approach to routine reflects Pitta\'s organizational intelligence. Unlike Vata types who resist structure and Kapha types who use it as rigidity, you can use structure as a tool for genuine evolution.'},
+      {type:'warn',text:'Introduce cooling practices deliberately: coconut oil massage instead of sesame, moon bathing in the evening, and foods like cucumber, coriander, and pomegranate. Pitta pacification is not weakness — it is converting intensity into sustained power.'},
+      {type:'warn',text:'Your competitive relationship with your own practice can create Pitta aggravation — achieving a meditation goal or yoga pose with the same intensity as a work deadline defeats the purpose. Practice surrender alongside practice.'},
+      {type:'bad',text:'Pitta types are uniquely vulnerable to midlife burnout because the same fire that creates success slowly consumes the tissues if not regularly replenished. The Vedic texts call this "Pitta Pradipa" — a fire that eventually burns its own fuel source.'},
+      {type:'bad',text:'Eating spicy, sour, or fermented foods regularly — Pitta\'s comfort foods — is pouring fuel on an already hot fire. The short-term satisfaction creates long-term inflammatory conditions in the gut, skin, and mind.'},
+    ],
+    remedies:[
+      {time:'Upon waking',action:'Sitali Pranayama',desc:'Roll tongue and inhale cool air through it for 10 rounds — this specific Pitta-pacifying breath technique cools the blood, liver, and mind before the day\'s fire can ignite.'},
+      {time:'Midday',action:'Rose water facial mist',desc:'Spritz pure rose water on your face at noon — rose is Pitta\'s medicine in Ayurveda, cooling inflammation and reminding the nervous system that beauty exists beyond achievement.'},
+      {time:'Evening',action:'Full moon practice',desc:'Sit in moonlight for 15 minutes when available — lunar energy is the specific antidote to excess Pitta, directly cooling the fire element that accumulates through daytime activity.'},
+      {time:'Before sleep',action:'Brahmi Coconut oil scalp massage',desc:'Brahmi in coconut oil (both cooling) applied to the scalp before bed directly pacifies Pitta in the brain, reducing the racing thoughts and heat that prevent Pitta types from sleeping deeply.'},
+    ],
+    vedaQuote:'Pitta prakopat sarva roga sambhavah — from Pitta aggravation, all diseases of fire, inflammation and excess arise.',
+    vedaSource:'Sushruta Samhita, Sutrasthana 15'
+  },
+
+  // 9 — Student lifestyle (late nights, exam stress)
+  {
+    score:39, gradeName:'Tamasic',gradeMeaning:'Academic pressure is creating Tamas — the heavy fog of exhaustion and depletion is clouding the very intelligence needed for learning.',
+    summary:'The irony of student life is that the pursuit of knowledge depletes the very instrument of knowing — the mind. Late nights, exam stress, irregular meals, and screen-dominated days are creating Prajna-aparadha (crimes against wisdom) that reduce cognitive performance. Ayurveda offers specific practices proven to enhance memory, focus, and learning capacity.',
+    categories:[
+      {name:'Sleep & Waking',icon:'☽',score:25,note:'Late nights destroying Ojas'},
+      {name:'Morning Sadhana',icon:'🌅',score:30,note:'Rushed mornings, no practice'},
+      {name:'Agni & Digestion',icon:'🔥',score:40,note:'Irregular meals, stressed eating'},
+      {name:'Mind & Prana',icon:'🌿',score:45,note:'High stress, some awareness'},
+      {name:'Dosha Harmony',icon:'⚖️',score:38,note:'Vata-Pitta aggravation from study'},
+    ],
+    insights:[
+      {type:'good',text:'The fact that you are curious enough about your health to do this assessment shows Sattva is present in your intellect — cultivate it. Ayurveda says curiosity about wellbeing is the beginning of wisdom, not knowledge about wellbeing.'},
+      {type:'good',text:'Even under pressure you maintain some meals — this basic Agni maintenance is keeping your system functional despite the stress. The body is extraordinarily resilient; it simply needs you to stop actively working against it.'},
+      {type:'warn',text:'Brahmi (Bacopa Monnieri) and Shankhpushpi are classical Ayurvedic Medhya Rasayanas — brain tonics clinically shown to improve memory consolidation, learning speed, and exam performance. Both are available as supplements.'},
+      {type:'warn',text:'Sleep is not the enemy of studying — it is when information consolidates from short-term to long-term memory. Pulling an all-nighter before an exam literally erases the information you studied. Sleep is your most powerful study tool.'},
+      {type:'bad',text:'Caffeine in excess (tea, coffee, energy drinks) is depleting your kidney Jing (vital essence) while creating Vata aggravation — the result is the paradox of feeling simultaneously wired and exhausted. This cycle becomes self-perpetuating.'},
+      {type:'bad',text:'Screen blue light after 9 PM suppresses the melatonin needed for the memory consolidation that happens in the first sleep cycle. Even one hour of screen-free time before bed dramatically improves study retention.'},
+    ],
+    remedies:[
+      {time:'Upon waking',action:'Brahmi Ghee practice',desc:'1/4 tsp of Brahmi-infused ghee taken on empty stomach every morning is the most powerful single practice for enhancing memory, focus, and clarity available in Ayurveda.'},
+      {time:'Midday',action:'Saraswati Aanjana (study break)',desc:'Every 45 minutes, close your eyes and trace the Sanskrit syllable "OM" internally 5 times — this micro-practice resets the nervous system and dramatically improves information retention.'},
+      {time:'Evening',action:'Memory consolidation walk',desc:'A 10-minute walk after your study session while mentally reviewing what you learned consolidates memory and prevents the "reading without absorbing" phenomenon that plagues stressed students.'},
+      {time:'Before sleep',action:'Vacha root milk',desc:'Vacha (Acorus calamus) in warm milk is the classical Ayurvedic prescription specifically for students — it enhances memory consolidation during sleep and improves clarity of recall.'},
+    ],
+    vedaQuote:'Medha agni — the fire of intelligence must be kept burning bright; learning is its fuel, sleep is its rest, stillness is its breath.',
+    vedaSource:'Charaka Samhita, Sharira Sthana 4'
+  },
+
+  // 10 — Working professional, lunch skip
+  {
+    score:47, gradeName:'Rajasic',gradeMeaning:'The modern professional pattern — Rajas at its most productive and most depleting simultaneously.',
+    summary:'You are running a high-performance engine without scheduled maintenance. The habits of professional success — skipping lunch, working through hunger, late dinners, evening screen use — are systematically depleting the biological resources that sustain performance. Your body is compensating today; it will not compensate indefinitely.',
+    categories:[
+      {name:'Sleep & Waking',icon:'☽',score:55,note:'Reasonable sleep, late wake'},
+      {name:'Morning Sadhana',icon:'🌅',score:38,note:'No morning practice routine'},
+      {name:'Agni & Digestion',icon:'🔥',score:35,note:'Skipped meals destroying Agni'},
+      {name:'Mind & Prana',icon:'🌿',score:52,note:'Functional but depleting'},
+      {name:'Dosha Harmony',icon:'⚖️',score:56,note:'Vata from erratic food timing'},
+    ],
+    insights:[
+      {type:'good',text:'Your body\'s ability to maintain function despite meal skipping shows constitutional strength — but Ayurveda calls this "Bala-hani" (strength depletion), not resilience. You are spending savings, not earning income.'},
+      {type:'good',text:'Your awareness of your dosha and desire to improve suggests the intelligence of your constitution is intact — Pitta types particularly have the willpower to implement changes once they understand the logic.'},
+      {type:'warn',text:'Skipping lunch is the single most damaging digestive habit in Ayurveda. Agni peaks at noon and requires fuel — when none is provided, it turns on the body\'s own tissues (Dhatu), creating inflammation and tissue depletion over time.'},
+      {type:'warn',text:'Keep a thermos of warm water at your desk. Sipping warm water throughout the day maintains hydration, supports lymphatic flow, and keeps Agni at a simmer between meals — this one habit changes the trajectory of your health significantly.'},
+      {type:'bad',text:'Late, large dinner is forcing your digestive system to work during the hours when it is biologically programmed to rest. Food eaten after 7 PM is primarily converted to Ama and stored fat rather than energy and tissue nourishment.'},
+      {type:'bad',text:'Working through lunch without grounding means Vata accumulates massively — the combination of skipped food, mental intensity, and no physical break creates the anxiety, scattered thinking, and afternoon energy crashes characteristic of Vata excess.'},
+    ],
+    remedies:[
+      {time:'Upon waking',action:'5-minute Sadhana minimum',desc:'Even 5 minutes of Bhramari (humming bee breath) upon waking activates the vagus nerve, reduces morning cortisol, and sets a parasympathetic tone for professional encounters.'},
+      {time:'Midday',action:'Sacred lunch — non-negotiable',desc:'Block your calendar for 20 minutes of lunch daily — this is not optional. Agni without fuel at its peak hour turns on the body itself; this is the primary cause of professional burnout.'},
+      {time:'Evening',action:'Phone-free dinner ritual',desc:'Eating dinner with full presence (no phone, no laptop) activates the parasympathetic nervous system, improving digestion by 40% and providing the transition your nervous system needs from work mode.'},
+      {time:'Before sleep',action:'Brahmi oil temple massage',desc:'Gentle circular massage of Brahmi oil at both temples and the crown for 5 minutes decelerates the mind from professional mode and significantly improves sleep onset time.'},
+    ],
+    vedaQuote:'Langhanam param aushadham — fasting (and by extension, meal neglect) becomes the greatest disease when done without wisdom.',
+    vedaSource:'Charaka Samhita, Chikitsa Sthana 15'
+  },
+
+  // 11 — Ideal sleep but no morning routine
+  {
+    score:65, gradeName:'Sattvic', gradeMeaning:'A promising foundation — your natural rhythms are sound; your conscious practice layer awaits development.',
+    summary:'You sleep and wake with the natural rhythms of the earth — this is a profound and rare gift in the modern world. Your body clock is aligned. What is missing is the conscious layer of practice that transforms good sleep from passive restoration into active cultivation of Ojas and Prana. You are 60% of the way there by simply doing what feels natural.',
+    categories:[
+      {name:'Sleep & Waking',icon:'☽',score:90,note:'Excellent natural rhythm'},
+      {name:'Morning Sadhana',icon:'🌅',score:32,note:'Natural riser, no practice'},
+      {name:'Agni & Digestion',icon:'🔥',score:70,note:'Good intuitive eating'},
+      {name:'Mind & Prana',icon:'🌿',score:65,note:'Calm but unstructured'},
+      {name:'Dosha Harmony',icon:'⚖️',score:68,note:'Natural balance, can deepen'},
+    ],
+    insights:[
+      {type:'good',text:'Your naturally aligned sleep-wake cycle means your hormonal rhythms — cortisol, melatonin, growth hormone — are all operating on their correct schedules. This gives you a biological advantage that most people have lost.'},
+      {type:'good',text:'Intuitive eating — following hunger rather than habits or stress — is a sophisticated sign of Agni intelligence. Your body tells you when it is ready to receive food; you are listening. This is genuine Sattvic awareness.'},
+      {type:'warn',text:'Add one morning practice today — just one. Tongue scraping takes 30 seconds and begins creating a conscious relationship with your morning that naturally expands into deeper practice over weeks.'},
+      {type:'warn',text:'Your good sleep is creating the energy for practice but the practice is not happening — this is like having a full tank of petrol but no destination. Give your morning energy a direction through even minimal conscious practice.'},
+      {type:'bad',text:'Without morning practices to channel it, the extraordinary Brahma muhurta energy of your natural wake time disperses into habitual activity — checking phone, making coffee, mental planning. The window closes by 6 AM daily.'},
+      {type:'bad',text:'Your balanced constitution is self-maintaining for now, but Ayurveda teaches that all bodies accumulate seasonal imbalances over time. Without practices to periodically reset and cleanse, even naturally balanced constitutions eventually show dis-ease.'},
+    ],
+    remedies:[
+      {time:'Upon waking',action:'Mindful first minute',desc:'Before touching your phone or speaking, take one full minute to lie still and observe the quality of your mind, body, and breath — this Vedic practice of "Pratyahara upon waking" sets the tone for genuine self-awareness.'},
+      {time:'Midday',action:'Gratitude at Noon',desc:'At noon — solar peak — pause for one minute and consciously acknowledge three things that are working in your life. This aligns you with the solar energy of expansion and activates Pitta\'s highest quality: transformative vision.'},
+      {time:'Evening',action:'Technology sunset',desc:'A natural riser benefits most from an early technology sunset (8 PM). Your nervous system is especially sensitive to blue light disruption given its excellent natural calibration — protect it.'},
+      {time:'Before sleep',action:'Yoga Nidra 11 minutes',desc:'This practice takes your already good sleep to profound depth — the 11-minute Yoga Nidra protocol has been shown to provide the restoration equivalent of an additional 2 hours of ordinary sleep.'},
+    ],
+    vedaQuote:'Swabhavoparam vadi — the greatest healing is the restoration of one\'s own natural intelligence (Swabhava).',
+    vedaSource:'Charaka Samhita, Sutrasthana 1'
+  },
+
+  // 12 — Weekend warrior, inconsistent routine
+  {
+    score:43, gradeName:'Rajasic',gradeMeaning:'Inconsistency is itself the imbalance — Vata thrives on variability and uses it to undermine all your weekend efforts.',
+    summary:'Your routine has peaks of excellence and valleys of neglect — this very inconsistency is the primary diagnosis. Ayurveda places regularity above quality: a modest daily practice done consistently creates more lasting health than weekend wellness binges. Your body craves the predictability that creates biological stability.',
+    categories:[
+      {name:'Sleep & Waking',icon:'☽',score:40,note:'Erratic — weekday vs weekend'},
+      {name:'Morning Sadhana',icon:'🌅',score:55,note:'Good on weekends, absent weekdays'},
+      {name:'Agni & Digestion',icon:'🔥',score:42,note:'Irregular schedule confuses Agni'},
+      {name:'Mind & Prana',icon:'🌿',score:45,note:'Stress spikes during work week'},
+      {name:'Dosha Harmony',icon:'⚖️',score:38,note:'Vata severely aggravated by variation'},
+    ],
+    insights:[
+      {type:'good',text:'Your weekend practices show genuine knowledge and good intention — you know what ideal looks like and you move toward it when given space. The task is not learning new practices but removing the barriers to daily practice.'},
+      {type:'good',text:'Having experienced the feeling of good dincharya practice, even occasionally, means your body has a reference point for how it wants to feel. Use that memory as motivation when the weekday pressure builds.'},
+      {type:'warn',text:'Social jet lag — the shift in sleep timing between weekdays and weekends — is measurably as damaging to health as actual jet lag. Aim for no more than one hour variation in your sleep and wake times seven days a week.'},
+      {type:'warn',text:'Design a 10-minute weekday minimum practice that is genuinely non-negotiable. Warm water, tongue scraping, three breaths. That is it. This anchor prevents the full unraveling that currently happens each Monday.'},
+      {type:'bad',text:'Vata dosha is specifically aggravated by inconsistency — variable sleep times, unpredictable meals, and irregular practices are the three primary Vata-disturbing factors. Your pattern is creating the anxiety, scattered focus, and irregular digestion characteristic of Vata excess.'},
+      {type:'bad',text:'The feast-or-famine approach to wellness — intensely healthy on weekends, completely off-track on weekdays — creates physiological confusion. Your Agni cannot anticipate meal times, your circadian rhythm cannot stabilize, and your nervous system cannot find its baseline.'},
+    ],
+    remedies:[
+      {time:'Upon waking',action:'Anchor practice (3 min)',desc:'Warm water + tongue scrape + three conscious breaths. Non-negotiable, seven days a week. This micro-practice maintains the thread of dincharya even through the most demanding weeks.'},
+      {time:'Midday',action:'Consistent lunch time',desc:'Set your lunch alarm for the same time every day — even 12:30 PM consistently, seven days a week, would transform your Agni strength within two weeks.'},
+      {time:'Evening',action:'Same bedtime — always',desc:'Choose a bedtime you can realistically maintain seven days a week and defend it completely. Consistent bedtime is the most powerful single habit for reducing Vata in the entire dincharya protocol.'},
+      {time:'Before sleep',action:'Tomorrow\'s sadhana intention',desc:'Spend two minutes before sleep setting a genuine intention for tomorrow\'s morning practice. The Vedic understanding is that intention set at sleep time becomes the first thought upon waking.'},
+    ],
+    vedaQuote:'Nityam hitahari syat — one should eat what is nourishing, without exception, every single day.',
+    vedaSource:'Charaka Samhita, Sutrasthana 5'
+  },
+
+  // 13 — Retired / senior, good habits
+  {
+    score:82, gradeName:'Sattvic',gradeMeaning:'The wisdom of years expressed in the wisdom of routine — a Sattvic elder is the highest ideal in Vedic culture.',
+    summary:'Your routine reflects the hard-won wisdom of a life lived with growing awareness. The time you now have to invest in your wellbeing is a genuine gift, and you are using it well. A few refinements to specific practices will bring you into alignment with the Brahmic level that your life stage and practice depth genuinely make possible.',
+    categories:[
+      {name:'Sleep & Waking',icon:'☽',score:85,note:'Good rhythm, aligned timing'},
+      {name:'Morning Sadhana',icon:'🌅',score:82,note:'Established and sincere practice'},
+      {name:'Agni & Digestion',icon:'🔥',score:80,note:'Wisdom in food choices'},
+      {name:'Mind & Prana',icon:'🌿',score:84,note:'Mature and contemplative'},
+      {name:'Dosha Harmony',icon:'⚖️',score:80,note:'Life experience brings balance'},
+    ],
+    insights:[
+      {type:'good',text:'Your morning practice reflects genuine spiritual maturity — you practice because you understand the value, not because you seek results. This Nishkama (desireless) approach to sadhana is itself a high teaching in Vedic philosophy.'},
+      {type:'good',text:'The regularity of your routine has created what Ayurveda calls Satmya — habitual wholesomeness. Your body now craves the practices rather than resisting them. This is a profound achievement that most people never reach.'},
+      {type:'warn',text:'As Vata naturally increases with age (the final third of life is governed by Vata), your oil practices become increasingly important. Consider upgrading to daily Abhyanga with warm medicated oils — Mahanarayan or Dhanwantaram are particularly beneficial.'},
+      {type:'warn',text:'Rasayana (rejuvenation) practices become appropriate and powerful in this stage of life. Chyawanprash taken every morning, Triphala at night, and Ashwagandha milk are the classical recommendations for preserving vitality and cognitive sharpness.'},
+      {type:'bad',text:'The primary Vata imbalance of senior years is dryness — in joints, skin, eyes, and the colon. If you experience any of these, increase oils both internally (ghee daily) and externally (daily oil massage) to counteract the naturally increasing Vata of Vanaprastha stage.'},
+      {type:'bad',text:'Social withdrawal, which sometimes accompanies the senior years, is strongly Vata-aggravating in Ayurveda — human connection, community, and service (Seva) are considered essential medicines for the later stages of life.'},
+    ],
+    remedies:[
+      {time:'Upon waking',action:'Chyawanprash + warm milk',desc:'This classical Rasayana (rejuvenation) formula is the most researched and revered longevity practice in Ayurveda — 1 tsp daily builds Ojas, strengthens immunity, and maintains cognitive function.'},
+      {time:'Midday',action:'Post-lunch Savasana',desc:'15 minutes of Savasana after lunch (specifically before 3 PM) is classically prescribed for seniors — it allows the parasympathetic system to complete digestion without Vata interference.'},
+      {time:'Evening',action:'Satsanga (community time)',desc:'Regular time with community, family, or a spiritual group is prescribed in Ayurveda as medicine for Vata excess — the warmth of genuine connection nourishes Prana in ways no herb can replicate.'},
+      {time:'Before sleep',action:'Triphala at bedtime',desc:'1 tsp of Triphala in warm water or honey 30 minutes before sleep is the single most recommended Ayurvedic practice for longevity — it gently cleanses, rebuilds tissues, and maintains all three doshas simultaneously.'},
+    ],
+    vedaQuote:'Arogya param bhagya — health is the supreme fortune; without it, all other achievements are hollow.',
+    vedaSource:'Ashtanga Hridayam, Sutrasthana 1'
+  },
+
+  // 14-19 extra profiles for variety
+  {score:71,gradeName:'Sattvic',gradeMeaning:'A genuinely balanced lifestyle seeking refinement — you are mid-journey and moving in the right direction.',summary:'Your routine sits at the threshold between Rajasic and Sattvic — you have done the foundational work and now need the deeper practices that transform good habits into genuine wisdom. The body is ready; the practices are waiting for your full commitment.',categories:[{name:'Sleep & Waking',icon:'☽',score:72,note:'Good, minor refinements needed'},{name:'Morning Sadhana',icon:'🌅',score:68,note:'Present, needs deepening'},{name:'Agni & Digestion',icon:'🔥',score:74,note:'Solid digestive habits'},{name:'Mind & Prana',icon:'🌿',score:70,note:'Balanced with room to grow'},{name:'Dosha Harmony',icon:'⚖️',score:72,note:'Good constitutional awareness'}],insights:[{type:'good',text:'Your consistent approach to meals and sleep timing shows an intuitive alignment with natural rhythms — trust this instinct and build on it rather than disrupting it with extreme programs.'},{type:'good',text:'The fact that you have sustained these habits over time — not just for a week — demonstrates genuine Sattva in your will. Sustained gentle effort is valued over intense temporary effort in Vedic wisdom.'},{type:'warn',text:'Introduce one new practice per month rather than overhauling everything at once — Ayurveda favors gradual, sustained change (Satmya) over revolutionary but unsustainable transformation.'},{type:'warn',text:'Add a brief afternoon practice — even 3 minutes of Bhramari breath at 3 PM interrupts the Vata wind of the afternoon and maintains clarity through the evening.'},{type:'bad',text:'The gap between your knowledge and practice is the primary edge — you understand what serves your health, but consistency in the harder moments is the next frontier of your dincharya journey.'},{type:'bad',text:'Seasonal transitions (each Ritu Sandhi — the 2 weeks around each season change) need special attention: lighter fasting, increased oil application, and reduced activity help the body adapt without accumulating seasonal Ama.'}],remedies:[{time:'Upon waking',action:'Herbal oil pulling',desc:'Swish 1 tbsp of sesame oil for 10-15 minutes while doing other morning tasks — this ancient Kavala practice removes bacteria, strengthens gums, and through reflex points stimulates all major organ systems.'},{time:'Midday',action:'Turmeric golden milk',desc:'Turmeric milk at noon is Ayurveda\'s most celebrated anti-inflammatory practice — it pacifies all three doshas, supports liver function, and maintains the joint flexibility essential for continued yoga practice.'},{time:'Evening',action:'Yin yoga practice',desc:'20 minutes of Yin yoga in the evening targets the connective tissues and meridians that active yoga misses, creating deep restoration at the cellular level and preparing the spine for uninterrupted sleep.'},{time:'Before sleep',action:'Saffron milk ritual',desc:'A pinch of saffron in warm milk before sleep builds Ojas, brightens the complexion, lifts mood gently, and has been traditionally used as an Anupana (carrier) for the body\'s natural healing intelligence during sleep.'}],vedaQuote:'Swasthasya swasthya rakshanam — the protection of the health of the healthy person is the first purpose of Ayurveda.',vedaSource:'Charaka Samhita, Sutrasthana 30'},
+  {score:35,gradeName:'Tamasic',gradeMeaning:'Heaviness and depletion have accumulated — the light of Ojas needs immediate attention and gentle, consistent rekindling.',summary:'Your body is communicating through its symptoms — fatigue, sluggishness, and a sense that rest does not fully restore. This is Tamas speaking. The beautiful truth of Ayurveda is that Tamas responds rapidly to even small shifts toward light, warmth, and regularity. Begin today, gently.',categories:[{name:'Sleep & Waking',icon:'☽',score:30,note:'Sleep not restoring — Tamas'},{name:'Morning Sadhana',icon:'🌅',score:28,note:'No morning light yet'},{name:'Agni & Digestion',icon:'🔥',score:38,note:'Dulled digestive fire'},{name:'Mind & Prana',icon:'🌿',score:40,note:'Heavy and withdrawn'},{name:'Dosha Harmony',icon:'⚖️',score:42,note:'Kapha-Vata disturbance'}],insights:[{type:'good',text:'Tamas, despite its reputation, contains rest — and rest is where healing happens. Your body is not broken; it is asking for a different quality of rest than unconscious collapse: conscious, nourishing, intentional restoration.'},{type:'good',text:'Small victories matter enormously from a Tamasic state — celebrate every single thing you manage to do, no matter how small. Ayurveda teaches that momentum is built from the inside out, not imposed from the outside in.'},{type:'warn',text:'The path out of Tamas begins with Rajas — you need to temporarily increase stimulation: earlier wake time, vigorous breathing, spicy teas, cold morning rinse. Paradoxically, the cure for heaviness is more movement, not more rest.'},{type:'warn',text:'Sunlight is your most accessible medicine right now. 10 minutes of morning sun on your skin within 30 minutes of waking resets the biological clock, triggers serotonin production, and begins the Kapha-dispersing action of solar Pitta energy.'},{type:'bad',text:'Social isolation feeds Tamas exponentially — each day alone increases heaviness and depletes the Prana that comes from genuine human warmth. Even one meaningful conversation daily is a significant Ayurvedic intervention.'},{type:'bad',text:'Heavy, sweet, cold, processed foods are Tamas made edible — each heavy meal reinforces the pattern. Warm soup, ginger tea, lightly spiced vegetables, and bitter greens are the specific Tamasic antidotes available in every kitchen.'}],remedies:[{time:'Upon waking',action:'Cold water face splash',desc:'Immediately upon waking, splash your face with cold water 7 times — this activates the diving reflex, wakes the nervous system from Tamasic sluggishness, and initiates the metabolic shift from rest to activity.'},{time:'Midday',action:'Ginger and lemon before meals',desc:'Fresh ginger with lemon juice and a pinch of rock salt taken 10 minutes before meals is Ayurveda\'s most powerful Agni-kindling practice — begin this today and watch your appetite, energy, and clarity transform within a week.'},{time:'Evening',action:'Surya Namskar (6 rounds)',desc:'6 rounds of Sun Salutation in the late afternoon generates internal fire that counters Tamas, improves circulation to sluggish tissues, and creates the mild fatigue that leads to genuinely restorative sleep.'},{time:'Before sleep',action:'Trikatu and honey',desc:'1/4 tsp of Trikatu (ginger-pepper-long pepper) with honey 30 minutes before sleep gently rekindles Agni overnight, so you wake with appetite rather than the heavy, unrefreshed feeling of accumulated Ama.'}],vedaQuote:'Tamah pramada alasya nidra — Tamas manifests as inertia, carelessness, laziness, and excessive sleep; counter it with Sattva and directed Rajas.',vedaSource:'Bhagavad Gita 14.8'},
+  {score:88,gradeName:'Brahmic',gradeMeaning:'Near-perfect alignment — your dincharya is a living example of Vedic wisdom in the modern world.',summary:'Your daily routine is a genuine embodiment of classical dincharya. The synergy of excellent sleep timing, rich morning practices, and mindful eating creates an ascending spiral of health, clarity, and vitality. You are not just maintaining health — you are actively building Ojas and expanding your capacity for Prana.',categories:[{name:'Sleep & Waking',icon:'☽',score:92,note:'Excellent — true Brahma muhurta'},{name:'Morning Sadhana',icon:'🌅',score:90,note:'Deep and consistent practice'},{name:'Agni & Digestion',icon:'🔥',score:85,note:'Strong, conscious Agni care'},{name:'Mind & Prana',icon:'🌿',score:88,note:'Sattvic and grounded'},{name:'Dosha Harmony',icon:'⚖️',score:86,note:'Excellent constitutional balance'}],insights:[{type:'good',text:'Your morning sadhana practice is creating the most valuable asset in Ayurveda: Prana-ojas-tejas balance — the triad of life force, vital essence, and radiant intelligence. Few modern people consciously cultivate all three.'},{type:'good',text:'Your eating practices demonstrate Mitahara (measured, conscious eating) — one of the three most cited practices in all Vedic health texts alongside Brahmacharya and dincharya. The combination is remarkably rare and powerful.'},{type:'warn',text:'At this level of practice, the refinements are subtle. Consider seasonal Panchakarma (Ayurvedic detox) once or twice yearly to reset the system and remove the subtle Ama that even excellent daily practices cannot fully address.'},{type:'warn',text:'Your practices are strong enough to support deeper Tapas (inner discipline). A weekly partial fast (eating only between 12–6 PM on one day) would deepen your Agni and create the subtle hunger that Ayurveda calls the most nourishing inner state.'},{type:'bad',text:'The primary risk at this level is subtle pride in one\'s practice — Ahankara (ego) in the spiritual path is the most difficult and most consequential obstacle. Maintaining beginner\'s mind keeps the practice alive and prevents stagnation at an advanced level.'},{type:'bad',text:'Ensure your excellent personal practice extends to those around you — Ayurveda considers Swadhyaya (self-study) incomplete without Seva (selfless service). Supporting others toward health completes the dincharya cycle.'}],remedies:[{time:'Upon waking',action:'Amrit Vela deep meditation',desc:'Extend your morning meditation to 45-60 minutes during Brahma muhurta — at this level of practice, the depth available in these hours is profoundly different from any other time of day.'},{time:'Midday',action:'Solar Pratyahara',desc:'At solar noon, close your eyes for 5 minutes and internalize the solar energy consciously — this advanced practice channels Pitta\'s peak power directly into inner transformation rather than external activity.'},{time:'Evening',action:'Sandhyavandanam practice',desc:'The Vedic evening twilight prayer (Sandhyavandanam) at sunset consciously closes the Pitta phase of the day and invites the cooling Kapha of evening — a practice that has sustained practitioners for thousands of years.'},{time:'Before sleep',action:'Yoga Nidra with Sankalpa',desc:'At this level of practice, Yoga Nidra becomes a vehicle for planting profound intentions in the subconscious during the hypnagogic state — use it to accelerate your deepest aspirations.'}],vedaQuote:'Sa eva hi purusho arthanam sarvesham sadhano mata — the person with integrated health is considered the means for achieving all human aims.',vedaSource:'Charaka Samhita, Sutrasthana 1.15'},
+  {score:57,gradeName:'Rajasic',gradeMeaning:'Active and searching — Rajas is the energy of transformation when directed consciously, and of depletion when left undirected.',summary:'You are in the most important phase of health development: you know something needs to change and you have the energy to change it. This Rajasic momentum, if channeled through even a few key dincharya practices, can create rapid and lasting transformation. The activation energy is present — give it direction.',categories:[{name:'Sleep & Waking',icon:'☽',score:55,note:'Variable — improving'},{name:'Morning Sadhana',icon:'🌅',score:52,note:'Some practices, inconsistent'},{name:'Agni & Digestion',icon:'🔥',score:60,note:'Moderate with good awareness'},{name:'Mind & Prana',icon:'🌿',score:58,note:'Seeking and questioning'},{name:'Dosha Harmony',icon:'⚖️',score:60,note:'Growing self-awareness'}],insights:[{type:'good',text:'Your Rajasic energy is exactly what is needed to initiate change. The texts say the journey from Tamas to Sattva always passes through Rajas — you are in the necessary middle passage, not a problem zone.'},{type:'good',text:'Your awareness of how your body feels after good versus poor choices shows developing Prajna — awakened intelligence. This discrimination (Viveka) is itself a practice and a protection.'},{type:'warn',text:'Channel your natural Rajasic energy into the mornings rather than evenings. Evening activity uses tomorrow\'s energy; morning activity generates today\'s energy. This shift alone transforms the quality of everything else.'},{type:'warn',text:'Find one accountability partner for your dincharya practice — even a 30-second daily check-in with someone who shares your intention. The Vedic tradition of Satsanga (community of truth) multiplies individual practice significantly.'},{type:'bad',text:'Rajas without Sattva creates a loop of activity and exhaustion without restoration. The missing element in your routine is stillness — even 10 minutes of sitting with nothing to accomplish creates the space where healing happens.'},{type:'bad',text:'Your seeking energy needs grounding in practice rather than information. You may be gathering more health knowledge than you are implementing — Ayurveda prioritizes Achar (conduct, practice) above Vichar (thought) at every stage.'}],remedies:[{time:'Upon waking',action:'One resolute practice',desc:'Choose one practice and do it every single morning without exception for 21 days — Triphala water, tongue scraping, or simple pranayama. The power is in the consistency, not the complexity.'},{time:'Midday',action:'Awareness meal',desc:'Once a day, eat one meal with complete attention — no reading, no phone, no standing. Simply eating, chewing, tasting. This single practice awakens more healing intelligence than most supplements combined.'},{time:'Evening',action:'Energy audit',desc:'Each evening, honestly assess whether today\'s activities gave energy or took it. This Swadhyaya (self-study) practice builds the discernment needed to gradually redesign your days toward nourishment.'},{time:'Before sleep',action:'Tomorrow\'s sadhana visualization',desc:'Spend 3 minutes clearly visualizing tomorrow\'s morning practice before sleep. The subconscious mind prepares the body during sleep to execute this intention — you will find yourself following through more naturally.'}],vedaQuote:'Chikitsa trividha — the three pillars of treatment are: eliminate the cause, purify the system, and rebuild with Rasayana.',vedaSource:'Charaka Samhita, Sutrasthana 16'},
+  {score:76,gradeName:'Sattvic',gradeMeaning:'Clarity and balance are present and growing — you are living proof that modern life and ancient wisdom are not incompatible.',summary:'Your routine demonstrates something remarkable: genuine Vedic alignment is possible within a modern, demanding life. You have found the leverage points — the few key practices that produce disproportionate health results. Refining and deepening these existing strengths will move you toward the Brahmic state your current habits are clearly pointing toward.',categories:[{name:'Sleep & Waking',icon:'☽',score:78,note:'Good rhythm, minor adjustments'},{name:'Morning Sadhana',icon:'🌅',score:75,note:'Consistent, ready to deepen'},{name:'Agni & Digestion',icon:'🔥',score:76,note:'Strong and reliable Agni'},{name:'Mind & Prana',icon:'🌿',score:77,note:'Balanced and growing'},{name:'Dosha Harmony',icon:'⚖️',score:75,note:'Good awareness and care'}],insights:[{type:'good',text:'The consistency of your routine is its primary strength — Ayurveda consistently values regularity above excellence. A modest practice done every day for a year produces more lasting health than an intensive practice done monthly.'},{type:'good',text:'Your Agni is genuinely strong — evidenced by good appetite, regular elimination, and sustained energy. Strong Agni is the foundation of all health in Ayurveda and cannot be faked or supplemented; it must be earned through consistent habits.'},{type:'warn',text:'Your next growth edge is in the depth of your practices rather than adding new ones. Spend more time in fewer practices — 20 minutes of genuine meditation versus 5 minutes of perfunctory sitting produces exponentially more Sattva.'},{type:'warn',text:'Consider quarterly Ayurvedic fasting (Langhana) — one day of rest for the digestive system every three months removes accumulated Ama even from strong Agni and creates a genuine reset that deepens your already good baseline.'},{type:'bad',text:'At the Sattvic level, the subtlest imbalances are often emotional — unexpressed grief (Kapha), unprocessed anger (Pitta), or chronic low-level anxiety (Vata). These require practices that go deeper than physical dincharya into the emotional body.'},{type:'bad',text:'The most common plateau at your level is practicing for health rather than consciousness — the shift from Ayurveda as medicine to Ayurveda as path requires a subtle but transformative change in the intention behind every practice.'}],remedies:[{time:'Upon waking',action:'Dharana (concentration) practice',desc:'Choose one Sanskrit mantra or positive intention and hold it in the mind without distraction for 5 minutes after waking. This Dharana practice develops the one-pointed focus that transforms all your other practices from technique to transmission.'},{time:'Midday',action:'Anuloma Viloma (extended)',desc:'At your practice level, extend Nadi Shodhana to 10 minutes at noon — the 72,000 nadis (energy channels) are fully opened and balanced with extended alternate nostril breathing, creating a midday reset of profound quality.'},{time:'Evening',action:'Sankalpa journaling',desc:'Write your deepest intention (Sankalpa) in a dedicated journal each evening. The evening Pitta-Kapha transition is the ideal time for clarity about what you are truly building with your life — dincharya in service of Dharma.'},{time:'Before sleep',action:'Shankha Prakshalana preparation',desc:'Periodically (seasonally) consider a gentle digestive cleanse of warm saline water — this classical Ayurvedic technique, done properly, removes years of accumulated coating from the intestinal walls and profoundly renews Agni.'}],vedaQuote:'Sama dosha sama agnischa sama dhatu mala kriyaha — balanced doshas, balanced Agni, balanced tissues: this is the definition of health.',vedaSource:'Sushruta Samhita, Sutrasthana 15.41'}
+];
+
+// ── SCORING ALGORITHM ──
+// Maps user inputs to the best matching profile
+function scoreInput(d) {
+  let score = 0;
+
+  // Sleep timing (0-25 pts)
+  const wakeHour = parseInt(d.wakeTime.split(':')[0]);
+  const sleepHour = parseInt(d.sleepTime.split(':')[0]);
+  if (wakeHour <= 5) score += 25;
+  else if (wakeHour <= 6) score += 20;
+  else if (wakeHour <= 7) score += 13;
+  else if (wakeHour <= 8) score += 7;
+  else score += 2;
+  if (sleepHour <= 21 || sleepHour >= 22) score += (sleepHour <= 22 ? 5 : sleepHour <= 23 ? 2 : 0);
+
+  // Sleep quality (0-8 pts)
+  score += d.sleepQ === 'deep' ? 8 : d.sleepQ === 'moderate' ? 4 : 1;
+  score += d.sunlight === 'yes' ? 5 : d.sunlight === 'sometimes' ? 2 : 0;
+
+  // Morning practices (0-20 pts)
+  const highVal = ['meditation','pranayama','yoga','abhyanga'];
+  const medVal = ['tonguescraping','oilpulling','nasya','warmwater','prayer','exercise'];
+  d.morning.forEach(p => { if(highVal.includes(p)) score+=4; else if(medVal.includes(p)) score+=2; });
+  score = Math.min(score + 20, score); // cap bonus
+
+  // Breakfast (0-6 pts)
+  score += d.breakfast === 'early' ? 6 : d.breakfast === 'mid' ? 4 : d.breakfast === 'late' ? 2 : 0;
+  score += d.breakfastQ === 'warm' ? 4 : d.breakfastQ === 'mixed' ? 2 : 0;
+
+  // Meals (0-15 pts)
+  score += d.mainMeal === 'noon' ? 12 : d.mainMeal === 'morning' ? 5 : d.mainMeal === 'variable' ? 3 : 0;
+  const dinnerHour = parseInt(d.dinnerTime.split(':')[0]);
+  score += dinnerHour <= 18 ? 8 : dinnerHour <= 19 ? 5 : dinnerHour <= 20 ? 2 : 0;
+  score += d.water === 'warm' ? 5 : d.water === 'mixed' ? 2 : 0;
+  score += d.mindful === 'yes' ? 5 : d.mindful === 'sometimes' ? 2 : 0;
+  score += d.snacking === 'no' ? 4 : d.snacking === 'sometimes' ? 2 : 0;
+
+  // Evening practices (0-10 pts)
+  const evHighVal = ['nophones','screenoff','consistent'];
+  const evMedVal = ['nature','journaling','reading','gratitude','warmfoot'];
+  d.evening.forEach(p => { if(evHighVal.includes(p)) score+=2; else if(evMedVal.includes(p)) score+=1.5; });
+
+  // Stress (0-7 pts inverse)
+  score += Math.max(0, 7 - (parseInt(d.stress) - 1));
+
+  return Math.min(Math.round(score), 100);
+}
+
+function getBestProfile(rawScore, dosha) {
+  // Map score to profile index with dosha consideration
+  if (rawScore >= 88) return 17; // near-perfect
+  if (rawScore >= 82) return 12; // retired/senior
+  if (rawScore >= 78) return 1;  // sattvic good
+  if (rawScore >= 74) return 19; // sattvic 76
+  if (rawScore >= 68) return 11; // natural riser
+  if (rawScore >= 63) return dosha==='pitta'?7:4; // pitta/early riser
+  if (rawScore >= 58) return dosha==='pitta'?7:dosha==='kapha'?6:18; // by dosha
+  if (rawScore >= 52) return dosha==='kapha'?6:2; // average modern
+  if (rawScore >= 46) return dosha==='kapha'?6:10; // professional
+  if (rawScore >= 40) return dosha==='vata'?12:5;  // night owl
+  if (rawScore >= 34) return 15; // tamasic mild
+  if (rawScore >= 28) return 9;  // student
+  return 3; // tamasic severe
+}
+
+// ── MAIN ANALYZE ──
+function analyze() {
+  document.getElementById('abtn').disabled = true;
+  goTo(4);
+  let mi2=0;
+  function cm(){document.getElementById('lmantra').textContent=MANTRAS[mi2++%MANTRAS.length]}
+  cm();
+  let pi=0;
+  const iv=setInterval(()=>{
+    document.getElementById('lphase').textContent=PHASES[pi%PHASES.length];
+    if(pi%2===0)cm(); pi++;
+  },900);
+
+  const d = {
+    wakeTime: document.getElementById('wakeTime').value,
+    sleepTime: document.getElementById('sleepTime').value,
+    sleepHrs: document.getElementById('sleepHrs').value,
+    sunlight: document.getElementById('sunlight').value,
+    sleepQ: document.getElementById('sleepQ').value,
+    breakfast: document.getElementById('breakfast').value,
+    breakfastQ: document.getElementById('breakfastQ').value,
+    mainMeal: document.getElementById('mainMeal').value,
+    dinnerTime: document.getElementById('dinnerTime').value,
+    water: document.getElementById('water').value,
+    meals: document.getElementById('meals').value,
+    mindful: document.getElementById('mindful').value,
+    snacking: document.getElementById('snacking').value,
+    stress: document.getElementById('stress').value,
+    dosha: getDosha(),
+    morning: getTags('morningTags'),
+    evening: getTags('eveningTags'),
+  };
+
+  // Simulate "thinking" time for better UX
+  setTimeout(() => {
+    clearInterval(iv);
+    const rawScore = scoreInput(d);
+    const profileIdx = getBestProfile(rawScore, d.dosha);
+    const profile = PROFILES[profileIdx];
+    // Use calculated score (not profile score) for personalization
+    const finalProfile = {...profile, score: rawScore};
+    document.getElementById('abtn').disabled = false;
+    showResults(finalProfile);
+  }, 3200);
+}
+
+// ── RENDER RESULTS ──
+function showResults(d) {
+  const sc = Math.round(d.score);
+  const col = sc>=75?'#7aaa80':sc>=50?'#c8a040':'#e87050';
+  const C = 2*Math.PI*68;
+  const off = C-(sc/100)*C;
+
+  const badgeClass = 'badge-'+d.gradeName.toLowerCase();
+
+  const cats = (d.categories||[]).map(c=>{
+    const s=Math.round(c.score);
+    const fc=s>=70?'#7aaa80':s>=45?'#c8a040':'#e87050';
+    return`<div class="cr">
+      <span class="cicon">${c.icon}</span>
+      <div class="cinfo"><div class="cname">${c.name}</div><div class="cnote">${c.note}</div></div>
+      <div class="cbar"><div class="ctrack"><div class="cfill" style="background:${fc}" data-w="${s}%"></div></div></div>
+      <div class="cscore">${s}</div>
+    </div>`;
+  }).join('');
+
+  const pm={good:'pg',warn:'pw',bad:'pb'};
+  const ins=(d.insights||[]).map(i=>`<div class="ii"><div class="ip ${pm[i.type]||'pw'}"></div><div class="it">${i.text}</div></div>`).join('');
+  const rems=(d.remedies||[]).map(r=>`<div class="rem"><div class="rtime">${r.time}</div><div class="ract">${r.action}</div><div class="rdesc">${r.desc}</div></div>`).join('');
+
+  document.getElementById('rinner').innerHTML=`
+    <div class="rh fu d1">
+      <div class="rl2">Your dincharya Report</div>
+      <span class="score-badge ${badgeClass}">${d.gradeName}</span>
+      <div class="rg"><em>${d.gradeName}</em></div>
+      <div class="rs">${d.summary}</div>
+    </div>
+
+    <div class="sw fu d2">
+      <div class="rc">
+        <svg class="rsvg" viewBox="0 0 160 160">
+          <circle class="rbg" cx="80" cy="80" r="68"/>
+          <circle class="rtr" cx="80" cy="80" r="68" stroke="${col}"
+            stroke-dasharray="${C}" stroke-dashoffset="${C}" id="rp"/>
+        </svg>
+        <div class="rcen"><div class="rnum" id="rn">0</div><div class="rden">/100</div></div>
+      </div>
+      <div class="smeta">
+        <div class="sgn">${d.gradeName}</div>
+        <div class="sgm">${d.gradeMeaning}</div>
+        <div class="sqt">"${d.vedaQuote}"<div class="sqsrc">— ${d.vedaSource}</div></div>
+      </div>
+    </div>
+
+    <div class="card fu d2">
+      <div class="ch"><div class="ci">📊</div><div><div class="ct">Category Breakdown</div><div class="cs">Each pillar of dincharya scored</div></div></div>
+      ${cats}
+    </div>
+
+    <div class="card fu d3">
+      <div class="ch"><div class="ci">🪷</div><div><div class="ct">Observations & Guidance</div><div class="cs">Personalized insights from your data</div></div></div>
+      <div class="il">${ins}</div>
+    </div>
+
+    <div class="card fu d4" style="background:linear-gradient(135deg,rgba(200,160,60,.07),rgba(90,128,96,.05))">
+      <div class="ch"><div class="ci">✦</div><div><div class="ct">Prescribed Remedies</div><div class="cs">Daily practices to elevate your alignment</div></div></div>
+      <div class="remg">${rems}</div>
+    </div>
+
+    <div class="resetrow fu d5">
+      <button class="btn bg" onclick="resetAll()">← Analyze Again</button>
+    </div>`;
+
+  goTo(5);
+  setTimeout(()=>{
+    document.getElementById('rp').style.strokeDashoffset=off;
+    let n=0;const inc=sc/55;
+    const t=setInterval(()=>{n=Math.min(n+inc,sc);document.getElementById('rn').textContent=Math.round(n);if(n>=sc)clearInterval(t);},16);
+    document.querySelectorAll('.cfill').forEach(b=>b.style.width=b.dataset.w);
+  },150);
+}
+
+// ── RESET ──
+function resetAll(){
+  document.querySelectorAll('.tag').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.dc').forEach(d=>d.classList.remove('on'));
+  document.querySelector('.dc.vata').classList.add('on');
+  document.getElementById('stress').value=5;
+  document.getElementById('sv').textContent='5';
+  goTo(0);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+# ════════════════════════════════════════════════════════════════
+# Prometheus Configuration — Dinacharya Analyzer
+# Scrapes metrics from: app, node_exporter, cadvisor (Docker)
+# ════════════════════════════════════════════════════════════════
+
+global:
+  scrape_interval: 15s        # Collect metrics every 15 seconds
+  evaluation_interval: 15s    # Evaluate rules every 15 seconds
+  external_labels:
+    project: 'dinacharya-analyzer'
+    environment: 'production'
+
+# ── Alerting Rules ─────────────────────────────────────────────────
+rule_files:
+  - "alert_rules.yml"
+
+# ── Scrape Configurations ──────────────────────────────────────────
+scrape_configs:
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Dinacharya Application metrics
+  - job_name: 'dinacharya-app'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['app:3000']
+        labels:
+          service: 'dinacharya-api'
+          version: '1.0.0'
+    scrape_interval: 10s
+
+  # Node Exporter (host machine metrics: CPU, memory, disk)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'host-metrics'
+
+  # cAdvisor (Docker container metrics)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          service: 'docker-metrics'
