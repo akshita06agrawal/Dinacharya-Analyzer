@@ -244,23 +244,6 @@ npm test -- --watch       # Watch mode for development
 
 ---
 
-## 📝 Resume Talking Points
-
-Use these when explaining this project in interviews:
-
-1. **"I built a multi-stage Dockerfile"** — separates build and runtime environments, resulting in a smaller, more secure production image
-
-2. **"I implemented health checks and readiness probes"** — enables Kubernetes to automatically restart failed pods and prevent traffic to unready pods
-
-3. **"I wrote a GitHub Actions CI/CD pipeline"** — every commit automatically runs tests, builds the Docker image, scans for vulnerabilities, and deploys to production
-
-4. **"I used Terraform for infrastructure as code"** — the entire AWS infrastructure is version-controlled and reproducible with a single command
-
-5. **"I added Prometheus metrics and Grafana dashboards"** — production observability with real-time monitoring of request rates, error rates, and resource usage
-
-6. **"I implemented rate limiting and security headers"** — production security practices using Helmet.js and express-rate-limit
-
----
 
 
 *Built as a DevOps portfolio project demonstrating Docker, Kubernetes, CI/CD, Terraform, and monitoring.*
